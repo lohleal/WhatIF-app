@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 
 import {
+    Image,
     KeyboardAvoidingView,
     Platform,
     Pressable,
@@ -73,6 +74,12 @@ export default function Cadastro() {
                 >
                     <View>
                         <View style={styles.header}>
+                            <Image
+                                source={require('../../../assets/images/WhatIFicon.png')}
+                                style={styles.logo}
+                                resizeMode="contain"
+                            />
+
                             <Text style={styles.appName}>
                                 WHAT IF APP
                             </Text>
@@ -87,7 +94,7 @@ export default function Cadastro() {
                             style={[
                                 styles.titleContainer,
                                 compactScreen &&
-                                    styles.titleContainerCompact,
+                                styles.titleContainerCompact,
                             ]}
                         >
                             <Text
@@ -115,8 +122,15 @@ export default function Cadastro() {
                                     styles.description
                                 }
                             >
-                                Comece sua jornada de
-                                organização,
+                                Vamos começar?
+                            </Text>
+
+                            <Text
+                                style={
+                                    styles.description
+                                }
+                            >
+                                Preencha seus dados para 
                             </Text>
 
                             <Text
@@ -124,7 +138,7 @@ export default function Cadastro() {
                                     styles.descriptionHighlight
                                 }
                             >
-                                cuidado e bem-estar.
+                                fazer parte do WhatIF
                             </Text>
                         </View>
 
@@ -132,7 +146,7 @@ export default function Cadastro() {
                             style={[
                                 styles.form,
                                 compactScreen &&
-                                    styles.formCompact,
+                                styles.formCompact,
                             ]}
                         >
                             <TextInput
@@ -281,6 +295,12 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
 
         justifyContent: 'space-between',
+    },
+
+    logo: {
+        width: 75,
+        height: 75,
+        marginBottom: 5,
     },
 
     header: {

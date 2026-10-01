@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 
 import {
+    Image,
     KeyboardAvoidingView,
     Platform,
     Pressable,
