@@ -89,7 +89,7 @@ export default function Login() {
                             style={[
                                 styles.welcome,
                                 compactScreen &&
-                                    styles.welcomeCompact,
+                                styles.welcomeCompact,
                             ]}
                         >
                             <Text
@@ -126,7 +126,7 @@ export default function Login() {
                             style={[
                                 styles.form,
                                 compactScreen &&
-                                    styles.formCompact,
+                                styles.formCompact,
                             ]}
                         >
                             <AuthInput
@@ -155,7 +155,10 @@ export default function Login() {
                                 </Text>
                             </Pressable>
 
-                            <PrimaryButton title="Entrar" />
+                            <PrimaryButton
+                                title="Entrar"
+                                onPress={() => router.push('/student/indicadores')}
+                            />
 
                             <View style={styles.separator}>
                                 <View style={styles.line} />
