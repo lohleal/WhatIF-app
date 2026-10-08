@@ -14,6 +14,7 @@ export default function WellbeingCard({
     iconColor,
     backgroundColor,
     width,
+    height,
     onPress,
     children,
 }) {
@@ -24,7 +25,7 @@ export default function WellbeingCard({
                 styles.card,
                 {
                     width,
-                    height: width * 1.38,
+                    height,
                     backgroundColor,
                     opacity: pressed ? 0.8 : 1,
                 },

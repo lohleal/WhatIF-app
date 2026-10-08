@@ -1,6 +1,6 @@
 import {
+    ImageBackground,
     Pressable,
-    ScrollView,
     StyleSheet,
     Text,
     useWindowDimensions,
@@ -12,235 +12,189 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS } from '../../../constants/colors';
-
 import WellbeingCard from '../../../features/indicators/components/wellbeingCard';
 
 export default function BemEstar() {
     const router = useRouter();
-    const { width } = useWindowDimensions();
 
-const horizontalPadding = Math.max(
-    20,
-    Math.min(32, width * 0.07)
-);
+    const { width, height } = useWindowDimensions();
 
-const gap = 14;
+    const compactScreen = height < 800;
 
-const cardWidth =
-    (width - horizontalPadding * 2 - gap) / 2;
+    const horizontalPadding = Math.max(
+        18,
+        Math.min(28, width * 0.055)
+    );
+
+    const contentWidth = width - horizontalPadding * 2;
+    const cardWidth = contentWidth * 0.48;
+
+    const cardHeight = compactScreen ? 178 : 205;
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <ScrollView
-                contentContainerStyle={[
-                    styles.content,
-                    {
-                        paddingHorizontal:
-                            horizontalPadding,
-                    },
-                ]}
-                showsVerticalScrollIndicator={false}
+            <ImageBackground
+                source={require('../../../../assets/images/indicators-background.png')}
+                resizeMode="cover"
+                style={styles.background}
             >
-                {/* Notificação */}
-
-                <View style={styles.notificationRow}>
-                    <Pressable style={styles.notificationButton}>
-                        <MaterialCommunityIcons
-                            name="bell-outline"
-                            size={27}
-                            color={COLORS.primary}
-                        />
-                    </Pressable>
-                </View>
-
-                {/* Mensagem principal */}
-
-                <View style={styles.welcomeCard}>
-                    <View style={styles.faceCircle}>
-                        <MaterialCommunityIcons
-                            name="emoticon-happy-outline"
-                            size={42}
-                            color="#EFB864"
-                        />
-                    </View>
-
-                    <View style={styles.welcomeText}>
-                        <Text style={styles.welcomeTitle}>
-                            Como você está{'\n'}
-                            se sentindo hoje?
-                        </Text>
-
-                        <Text style={styles.welcomeSubtitle}>
-                            Continue cuidando de você.
-                        </Text>
-                    </View>
-                </View>
-
-                {/* Cards */}
-
                 <View
                     style={[
-                        styles.grid,
+                        styles.content,
                         {
-                            gap,
+                            paddingHorizontal: horizontalPadding,
                         },
                     ]}
                 >
-                    {/* ÁGUA */}
-
-                    <WellbeingCard
-                        width={cardWidth}
-                        title="Água"
-                        subtitle="4 de 8 copos"
-                        iconName="water"
-                        iconColor="#48A9B6"
-                        backgroundColor="#EEF8FC"
-                        onPress={() =>
-                            router.push(
-                                '/student/wellbeing/hidratacao'
-                            )
-                        }
-                    >
-                        <View style={styles.waterCircle}>
+                    {/* topo */}
+                    <View style={styles.notificationRow}>
+                        <Pressable style={styles.notificationButton}>
                             <MaterialCommunityIcons
-                                name="water-outline"
-                                size={55}
-                                color="#69C6D2"
+                                name="bell-outline"
+                                size={26}
+                                color={COLORS.primary}
                             />
-                        </View>
-                    </WellbeingCard>
+                        </Pressable>
+                    </View>
 
-                    {/* SONO */}
-
-                    <WellbeingCard
-                        width={cardWidth}
-                        title="Sono"
-                        subtitle="7h 30min"
-                        iconName="moon-waning-crescent"
-                        iconColor="#7155A5"
-                        backgroundColor="#F6F0FC"
-                        onPress={() =>
-                            router.push(
-                                '/student/wellbeing/sono'
-                            )
-                        }
-                    >
-                        <MaterialCommunityIcons
-                            name="weather-night"
-                            size={75}
-                            color="#A997C7"
-                        />
-
-                        <Text style={styles.sleepStatus}>
-                            Bom
-                        </Text>
-                    </WellbeingCard>
-
-                    {/* HUMOR */}
-
-                    <WellbeingCard
-                        width={cardWidth}
-                        title="Humor"
-                        subtitle="Feliz"
-                        iconName="emoticon-happy-outline"
-                        iconColor="#E6A63A"
-                        backgroundColor="#FFF7EA"
-                        onPress={() =>
-                            router.push(
-                                '/student/wellbeing/humor'
-                            )
-                        }
-                    >
-                        <View style={styles.moodBars}>
-                            <View
-                                style={[
-                                    styles.moodBar,
-                                    { height: 35 },
-                                ]}
-                            />
-
-                            <View
-                                style={[
-                                    styles.moodBar,
-                                    { height: 55 },
-                                ]}
-                            />
-
-                            <View
-                                style={[
-                                    styles.moodBar,
-                                    { height: 42 },
-                                ]}
-                            />
-
-                            <View
-                                style={[
-                                    styles.moodBarActive,
-                                    { height: 75 },
-                                ]}
-                            />
-
-                            <View
-                                style={[
-                                    styles.moodBar,
-                                    { height: 35 },
-                                ]}
+                    {/* card de mensagem */}
+                    <View style={styles.welcomeCard}>
+                        <View style={styles.faceCircle}>
+                            <MaterialCommunityIcons
+                                name="emoticon-happy-outline"
+                                size={34}
+                                color="#EFB864"
                             />
                         </View>
 
-                        <View style={styles.emojis}>
-                            <Text style={styles.emoji}>😔</Text>
-                            <Text style={styles.emoji}>😐</Text>
-                            <Text style={styles.emoji}>😁</Text>
-                        </View>
-                    </WellbeingCard>
+                        <View style={styles.welcomeText}>
+                            <Text style={styles.welcomeTitle}>
+                                Como você está{'\n'}
+                                se sentindo hoje?
+                            </Text>
 
-                    {/* ESTUDO */}
-
-                    <WellbeingCard
-                        width={cardWidth}
-                        title="Estudo"
-                        subtitle={'Seu estudo geral\nde hoje.'}
-                        iconName="book-open-page-variant-outline"
-                        iconColor="#7DA55C"
-                        backgroundColor="#F2F8EC"
-                        onPress={() =>
-                            router.push(
-                                '/student/wellbeing/estudo'
-                            )
-                        }
-                    >
-                        <View style={styles.studyCircle}>
-                            <Text style={styles.studyTime}>
-                                1h
+                            <Text style={styles.welcomeSubtitle}>
+                                Continue cuidando de você.
                             </Text>
                         </View>
-                    </WellbeingCard>
-                </View>
+                    </View>
 
-                {/* Mensagem final */}
+                    {/* grade */}
+                    <View style={styles.grid}>
+                        <WellbeingCard
+                            width={cardWidth}
+                            height={cardHeight}
+                            title="Água"
+                            subtitle="4 de 8 copos"
+                            iconName="water"
+                            iconColor="#48A9B6"
+                            backgroundColor="#EEF8FC"
+                            onPress={() =>
+                                router.push('/student/wellbeing/hidratacao')
+                            }
+                        >
+                            <View style={styles.waterCircle}>
+                                <MaterialCommunityIcons
+                                    name="water-outline"
+                                    size={52}
+                                    color="#69C6D2"
+                                />
+                            </View>
+                        </WellbeingCard>
 
-                <View style={styles.footerCard}>
-                    <MaterialCommunityIcons
-                        name="sprout-outline"
-                        size={35}
-                        color="#89AE70"
-                    />
+                        <WellbeingCard
+                            width={cardWidth}
+                            height={cardHeight}
+                            title="Sono"
+                            subtitle="7h 30min"
+                            iconName="moon-waning-crescent"
+                            iconColor="#7155A5"
+                            backgroundColor="#F6F0FC"
+                            onPress={() =>
+                                router.push('/student/wellbeing/sono')
+                            }
+                        >
+                            <MaterialCommunityIcons
+                                name="weather-night"
+                                size={72}
+                                color="#A997C7"
+                            />
+                            <Text style={styles.sleepStatus}>Bom</Text>
+                        </WellbeingCard>
 
-                    <Text style={styles.footerText}>
-                        Pequenas ações diárias geram{' '}
-                        <Text style={styles.highlight}>
-                            grandes transformações.
+                        <WellbeingCard
+                            width={cardWidth}
+                            height={cardHeight}
+                            title="Humor"
+                            subtitle="Feliz"
+                            iconName="emoticon-happy-outline"
+                            iconColor="#E6A63A"
+                            backgroundColor="#FFF7EA"
+                            onPress={() =>
+                                router.push('/student/wellbeing/humor')
+                            }
+                        >
+                            <View style={styles.moodBars}>
+                                <View style={[styles.moodBar, { height: 28 }]} />
+                                <View style={[styles.moodBar, { height: 48 }]} />
+                                <View style={[styles.moodBar, { height: 34 }]} />
+                                <View
+                                    style={[
+                                        styles.moodBarActive,
+                                        { height: 62 },
+                                    ]}
+                                />
+                                <View style={[styles.moodBar, { height: 28 }]} />
+                            </View>
+
+                            <View style={styles.emojis}>
+                                <Text style={styles.emoji}>😔</Text>
+                                <Text style={styles.emoji}>😐</Text>
+                                <Text style={styles.emoji}>😁</Text>
+                            </View>
+                        </WellbeingCard>
+
+                        <WellbeingCard
+                            width={cardWidth}
+                            height={cardHeight}
+                            title="Estudo"
+                            subtitle={'Seu estudo geral\nde hoje.'}
+                            iconName="book-open-page-variant-outline"
+                            iconColor="#7DA55C"
+                            backgroundColor="#F2F8EC"
+                            onPress={() =>
+                                router.push('/student/wellbeing/estudo')
+                            }
+                        >
+                            <View style={styles.studyCircle}>
+                                <Text style={styles.studyTime}>1h</Text>
+                            </View>
+                        </WellbeingCard>
+                    </View>
+
+                    {/* card final */}
+                    <View style={styles.footerCard}>
+                        <MaterialCommunityIcons
+                            name="sprout-outline"
+                            size={28}
+                            color="#89AE70"
+                        />
+
+                        <Text style={styles.footerText}>
+                            Pequenas ações diárias geram{' '}
+                            <Text style={styles.highlight}>
+                                grandes transformações.
+                            </Text>
                         </Text>
-                    </Text>
 
-                    <MaterialCommunityIcons
-                        name="heart-outline"
-                        size={26}
-                        color={COLORS.primary}
-                    />
+                        <MaterialCommunityIcons
+                            name="heart-outline"
+                            size={22}
+                            color={COLORS.primary}
+                        />
+                    </View>
                 </View>
-            </ScrollView>
+            </ImageBackground>
         </SafeAreaView>
     );
 }
@@ -251,54 +205,49 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.background,
     },
 
+    background: {
+        flex: 1,
+    },
+
     content: {
-        paddingTop: 10,
-        paddingBottom: 115,
+        flex: 1,
+        paddingTop: 4,
+        paddingBottom: 100,
+        justifyContent: 'space-between',
     },
 
     notificationRow: {
         alignItems: 'flex-end',
-        marginBottom: 22,
+        marginBottom: 4,
     },
 
     notificationButton: {
-        width: 44,
-        height: 44,
-
-        borderRadius: 22,
-
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
     },
 
     welcomeCard: {
-        minHeight: 125,
-
-        borderRadius: 22,
-
-        paddingHorizontal: 18,
-        paddingVertical: 15,
-
+        minHeight: 88,
+        borderRadius: 20,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
         backgroundColor: '#F3F7ED',
-
         flexDirection: 'row',
         alignItems: 'center',
-
-        marginBottom: 20,
+        marginBottom: 10,
     },
 
     faceCircle: {
-        width: 82,
-        height: 82,
-
-        borderRadius: 41,
-
+        width: 58,
+        height: 58,
+        borderRadius: 29,
         backgroundColor: '#FFF8E4',
-
         alignItems: 'center',
         justifyContent: 'center',
-
-        marginRight: 16,
+        marginRight: 12,
     },
 
     welcomeText: {
@@ -306,129 +255,104 @@ const styles = StyleSheet.create({
     },
 
     welcomeTitle: {
-        fontSize: 23,
-        lineHeight: 29,
+        fontSize: 18,
+        lineHeight: 22,
         fontWeight: '700',
-
         color: COLORS.primary,
     },
 
     welcomeSubtitle: {
-        marginTop: 6,
-
-        fontSize: 14,
-
+        marginTop: 3,
+        fontSize: 12,
         color: COLORS.textSecondary,
     },
 
     grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        rowGap: 12,
     },
 
     waterCircle: {
-        width: 120,
-        height: 120,
-
-        borderRadius: 60,
-
-        borderWidth: 14,
+        width: 108,
+        height: 108,
+        borderRadius: 54,
+        borderWidth: 10,
         borderColor: '#A9E7EE',
-
         alignItems: 'center',
         justifyContent: 'center',
     },
 
     sleepStatus: {
-        marginTop: 15,
-
+        marginTop: 8,
         color: COLORS.primary,
-
         fontSize: 16,
         fontWeight: '500',
     },
 
     moodBars: {
-        height: 80,
-
+        height: 65,
         flexDirection: 'row',
         alignItems: 'flex-end',
-
-        gap: 10,
+        gap: 8,
     },
 
     moodBar: {
-        width: 12,
-
-        borderRadius: 8,
-
+        width: 10,
+        borderRadius: 6,
         backgroundColor: '#FFDDBE',
     },
 
     moodBarActive: {
-        width: 12,
-
-        borderRadius: 8,
-
+        width: 10,
+        borderRadius: 6,
         backgroundColor: '#FF9B67',
     },
 
     emojis: {
         width: '100%',
-
-        marginTop: 18,
-
+        marginTop: 10,
         flexDirection: 'row',
         justifyContent: 'space-around',
     },
 
     emoji: {
-        fontSize: 27,
+        fontSize: 22,
     },
 
     studyCircle: {
-        width: 125,
-        height: 125,
-
-        borderRadius: 63,
-
-        borderWidth: 13,
+        width: 108,
+        height: 108,
+        borderRadius: 54,
+        borderWidth: 10,
         borderColor: '#A7C881',
-
         alignItems: 'center',
         justifyContent: 'center',
     },
 
     studyTime: {
-        fontSize: 34,
+        fontSize: 30,
         fontWeight: '700',
-
         color: COLORS.primary,
     },
 
     footerCard: {
-        marginTop: 35,
-
-        minHeight: 90,
-
-        borderRadius: 20,
-
+        minHeight: 70,
+        maxHeight: 74,
+        marginTop: 10,
+        borderRadius: 18,
         backgroundColor: '#F4F8EE',
-
-        paddingHorizontal: 20,
-
+        paddingHorizontal: 15,
         flexDirection: 'row',
         alignItems: 'center',
-
-        gap: 14,
+        gap: 10,
     },
 
     footerText: {
         flex: 1,
-
-        fontSize: 15,
-        lineHeight: 21,
-
+        fontSize: 13,
+        lineHeight: 18,
         color: COLORS.textSecondary,
     },
 
