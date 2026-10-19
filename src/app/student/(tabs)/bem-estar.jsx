@@ -32,12 +32,12 @@ export default function BemEstar() {
     const cardHeight = compactScreen ? 178 : 205;
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <ImageBackground
+        <ImageBackground
                 source={require('../../../../assets/images/indicators-background.png')}
                 resizeMode="cover"
                 style={styles.background}
             >
+            <SafeAreaView style={styles.safeArea}>
                 <View
                     style={[
                         styles.content,
@@ -158,7 +158,7 @@ export default function BemEstar() {
                             width={cardWidth}
                             height={cardHeight}
                             title="Estudo"
-                            subtitle={'Seu estudo geral\nde hoje.'}
+                            //subtitle={'Seu estudo geral\nde hoje.'}
                             iconName="book-open-page-variant-outline"
                             iconColor="#7DA55C"
                             backgroundColor="#F2F8EC"
@@ -194,15 +194,15 @@ export default function BemEstar() {
                         />
                     </View>
                 </View>
-            </ImageBackground>
-        </SafeAreaView>
+                </SafeAreaView>
+            </ImageBackground >
     );
 }
 
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: 'transparent',
     },
 
     background: {

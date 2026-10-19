@@ -173,7 +173,7 @@ export default function Indicadores() {
                                 styles.messageText
                             }
                         >
-                            Cada meta concluída
+                            Cada objetivo concluído
                             completa uma parte do
                             seu{' '}
                             <Text
