@@ -47,7 +47,16 @@ export default function Login() {
     }
 
     return (
+
         <SafeAreaView style={styles.safeArea}>
+
+            <Image
+                source={require('../../../assets/images/login-background.png')}
+                style={styles.backgroundImage}
+                resizeMode="cover"
+                pointerEvents="none"
+            />
+
             <KeyboardAvoidingView
                 style={styles.container}
                 behavior={
@@ -75,8 +84,15 @@ export default function Login() {
                 >
                     <View>
                         <View style={styles.header}>
+
+                            <Image
+                                source={require('../../../assets/images/WhatIFicon.png')}
+                                style={styles.logo}
+                                resizeMode="contain"
+                            />
+
                             <Text style={styles.appName}>
-                                WHAT IF APP
+                                WHATIF APP
                             </Text>
 
                             <Text style={styles.subtitle}>
@@ -92,6 +108,7 @@ export default function Login() {
                                 styles.welcomeCompact,
                             ]}
                         >
+
                             <Text
                                 style={[
                                     styles.title,
@@ -102,24 +119,15 @@ export default function Login() {
                                     },
                                 ]}
                             >
-                                Bem-vindo(a){'\n'}
-                                ao{' '}
-                                <Text style={styles.highlight}>
-                                    What IF App
-                                </Text>
+                                Que bom ter você por aqui!{'\n'}
                             </Text>
 
                             <Text style={styles.description}>
-                                Um espaço para você cuidar da sua
+                                Entre ou crie sua conta para
+                                <Text style={styles.descriptionHighlight}> iniciar sua jornada!</Text>
                             </Text>
 
-                            <Text
-                                style={
-                                    styles.descriptionHighlight
-                                }
-                            >
-                                mente, emoções e conquistas.
-                            </Text>
+
                         </View>
 
                         <View
@@ -206,14 +214,29 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
+
+    backgroundImage: {
+        ...StyleSheet.absoluteFillObject,
+        width: '100%',
+        height: '100%',
+    },
+
+
+    logo: {
+        width: 80,
+        height: 80,
+        marginBottom: 8,
+    },
+
+
     safeArea: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: 'transparent',
     },
 
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: 'transparent',
     },
 
     content: {
