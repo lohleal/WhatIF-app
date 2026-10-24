@@ -127,7 +127,7 @@ export default function Indicadores() {
                                 Olá,{' '}
                                 {name ||
                                     'estudante'}
-                                ! 💚
+                                ! 
                             </Text>
 
                             <Text
