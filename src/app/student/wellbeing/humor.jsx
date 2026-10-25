@@ -89,12 +89,10 @@ export default function Humor() {
 
                 <View style={styles.mainCard}>
                     <Text style={styles.sectionTitle}>
-                        Como está seu humor hoje?
+                        Como você está se sentindo hoje?
                     </Text>
 
-                    <Text style={styles.helper}>
-                        Escolha a opção que mais combina com você.
-                    </Text>
+                  
 
                     <View style={styles.moodList}>
                         {MOODS.map((mood) => {
