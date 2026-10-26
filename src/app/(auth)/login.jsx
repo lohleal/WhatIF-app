@@ -14,12 +14,14 @@ import {
 
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import useAuthViewModel from '../../features/auth/viewmodels/useAuthViewModel';
 
 import AuthInput from '../../components/AuthInput';
 import PrimaryButton from '../../components/PrimaryButton';
 import { COLORS } from '../../constants/colors';
 
 export default function Login() {
+    const { login, loading, erro } = useAuthViewModel();
     const router = useRouter();
     const scrollViewRef = useRef(null);
 
@@ -36,6 +38,14 @@ export default function Login() {
         29,
         Math.min(37, width * 0.09)
     );
+    
+    async function handleLogin() {
+        try {
+            await login(email, senha);
+        } catch (error) {
+            // O ViewModel já atualiza a mensagem de erro.
+        }
+    }
 
     function handlePasswordFocus() {
         setTimeout(() => {
@@ -47,7 +57,7 @@ export default function Login() {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-        
+
             <View style={styles.screen}>
                 <Image
                     source={require('../../../assets/images/login-background.png')}
@@ -101,7 +111,7 @@ export default function Login() {
                                 style={[
                                     styles.welcome,
                                     compactScreen &&
-                                        styles.welcomeCompact,
+                                    styles.welcomeCompact,
                                 ]}
                             >
                                 <Text
@@ -132,7 +142,7 @@ export default function Login() {
                                 style={[
                                     styles.form,
                                     compactScreen &&
-                                        styles.formCompact,
+                                    styles.formCompact,
                                 ]}
                             >
                                 <AuthInput

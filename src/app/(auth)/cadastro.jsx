@@ -1,6 +1,7 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 import {
+    Alert,
     Image,
     KeyboardAvoidingView,
     Platform,
@@ -15,12 +16,19 @@ import {
 
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import useAuthViewModel from '../../features/auth/viewmodels/useAuthViewModel';
 
 import { COLORS } from '../../constants/colors';
 
 export default function Cadastro() {
+    const { cadastro, loading, erro } = useAuthViewModel();
     const router = useRouter();
     const scrollViewRef = useRef(null);
+
+    const [nome, setNome] = useState('');
+    const [email, setEmail] = useState('');
+    const [senha, setSenha] = useState('');
+    const [confirmarSenha, setConfirmarSenha] = useState('');
 
     const { width, height } = useWindowDimensions();
 
@@ -35,6 +43,37 @@ export default function Cadastro() {
         27,
         Math.min(34, width * 0.082)
     );
+
+
+    async function handleCadastro() {
+        if (!nome.trim() || !email.trim() || !senha || !confirmarSenha) {
+            Alert.alert('Atenção', 'Preencha todos os campos.');
+            return;
+        }
+
+        if (senha !== confirmarSenha) {
+            Alert.alert('Senhas diferentes', 'As senhas digitadas não coincidem.');
+            return;
+        }
+
+        try {
+            await cadastro(nome, email, senha);
+
+            Alert.alert(
+                'Cadastro realizado!',
+                'Sua conta foi criada com sucesso.',
+                [
+                    {
+                        text: 'Continuar',
+                        onPress: () => router.replace('/login'),
+                    },
+                ]
+            );
+        } catch (error) {
+            // A mensagem será exibida pela variável erro na interface.
+        }
+    }
+
 
     function handlePasswordFocus() {
         setTimeout(() => {
@@ -130,7 +169,7 @@ export default function Cadastro() {
                                     styles.description
                                 }
                             >
-                                Preencha seus dados para 
+                                Preencha seus dados para
                             </Text>
 
                             <Text
@@ -155,6 +194,9 @@ export default function Cadastro() {
                                 placeholderTextColor={
                                     COLORS.textSecondary
                                 }
+                                value={nome}
+                                onChangeText={setNome}
+                                autoCapitalize="words"
                                 returnKeyType="next"
                             />
 
@@ -165,6 +207,8 @@ export default function Cadastro() {
                                     COLORS.textSecondary
                                 }
                                 keyboardType="email-address"
+                                value={email}
+                                onChangeText={setEmail}
                                 autoCapitalize="none"
                                 returnKeyType="next"
                             />
@@ -195,6 +239,8 @@ export default function Cadastro() {
                                 placeholderTextColor={
                                     COLORS.textSecondary
                                 }
+                                value={senha}
+                                onChangeText={setSenha}
                                 secureTextEntry
                                 returnKeyType="next"
                                 onFocus={
@@ -208,6 +254,8 @@ export default function Cadastro() {
                                 placeholderTextColor={
                                     COLORS.textSecondary
                                 }
+                                value={confirmarSenha}
+                                onChangeText={setConfirmarSenha}
                                 secureTextEntry
                                 returnKeyType="done"
                                 onFocus={
@@ -219,15 +267,20 @@ export default function Cadastro() {
                                 style={
                                     styles.createButton
                                 }
+                                onPress={handleCadastro}
+                                disabled={loading}
                             >
-                                <Text
-                                    style={
-                                        styles.createButtonText
-                                    }
-                                >
-                                    Criar conta
+                                <Text style={styles.createButtonText}>
+                                    {loading ? 'Criando conta...' : 'Criar conta'}
                                 </Text>
+
                             </Pressable>
+                            
+                            {erro ? (
+                                <Text style={{ color: 'red', textAlign: 'center', marginTop: 8 }}>
+                                    {erro}
+                                </Text>
+                            ) : null}
 
                             <View
                                 style={
