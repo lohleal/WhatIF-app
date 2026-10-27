@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 import {
     Image,
@@ -22,6 +22,8 @@ import { COLORS } from '../../constants/colors';
 
 export default function Login() {
     const { login, loading, erro } = useAuthViewModel();
+    const [email, setEmail] = useState('');
+    const [senha, setSenha] = useState('');
     const router = useRouter();
     const scrollViewRef = useRef(null);
 
@@ -38,10 +40,11 @@ export default function Login() {
         29,
         Math.min(37, width * 0.09)
     );
-    
+
     async function handleLogin() {
         try {
             await login(email, senha);
+            router.replace('/student/indicadores');
         } catch (error) {
             // O ViewModel já atualiza a mensagem de erro.
         }
@@ -147,6 +150,9 @@ export default function Login() {
                             >
                                 <AuthInput
                                     placeholder="E-mail ou nome de usuário"
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    keyboardType="email-address"
                                     autoCapitalize="none"
                                     autoCorrect={false}
                                     returnKeyType="next"
@@ -154,9 +160,13 @@ export default function Login() {
 
                                 <AuthInput
                                     placeholder="Senha"
+                                    value={senha}
+                                    onChangeText={setSenha}
                                     secureTextEntry
+                                    autoCapitalize="none"
                                     returnKeyType="done"
                                     onFocus={handlePasswordFocus}
+                                    onSubmitEditing={handleLogin}
                                 />
 
                                 <Pressable
@@ -172,13 +182,14 @@ export default function Login() {
                                 </Pressable>
 
                                 <PrimaryButton
-                                    title="Entrar"
-                                    onPress={() =>
-                                        router.push(
-                                            '/student/indicadores'
-                                        )
-                                    }
+                                    title={loading ? 'Entrando...' : 'Entrar'}
+                                    onPress={handleLogin}
+                                    disabled={loading}
                                 />
+
+                                {erro ? (
+                                    <Text style={styles.loginError}>{erro}</Text>
+                                ) : null}
 
                                 <View style={styles.separator}>
                                     <View style={styles.line} />
@@ -229,6 +240,15 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
+
+    loginError: {
+        color: '#D32F2F',
+        fontSize: 14,
+        textAlign: 'center',
+        marginTop: 8,
+        marginBottom: 8,
+    },
+
     safeArea: {
         flex: 1,
         backgroundColor: 'transparent',

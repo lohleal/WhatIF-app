@@ -1,27 +1,34 @@
+
 import { StyleSheet, TextInput } from 'react-native';
 
 import { COLORS } from '../constants/colors';
 
 export default function AuthInput({
     placeholder,
+    value,
+    onChangeText,
     secureTextEntry = false,
     keyboardType = 'default',
     autoCapitalize = 'sentences',
     autoCorrect = true,
     returnKeyType,
     onFocus,
+    onSubmitEditing,
 }) {
     return (
         <TextInput
             style={styles.input}
             placeholder={placeholder}
             placeholderTextColor={COLORS.textSecondary}
+            value={value}
+            onChangeText={onChangeText}
             secureTextEntry={secureTextEntry}
             keyboardType={keyboardType}
             autoCapitalize={autoCapitalize}
             autoCorrect={autoCorrect}
             returnKeyType={returnKeyType}
             onFocus={onFocus}
+            onSubmitEditing={onSubmitEditing}
         />
     );
 }
@@ -29,17 +36,12 @@ export default function AuthInput({
 const styles = StyleSheet.create({
     input: {
         minHeight: 56,
-
         backgroundColor: COLORS.surface,
         borderRadius: 28,
-
         paddingHorizontal: 22,
-
         marginBottom: 12,
-
         fontSize: 16,
         color: COLORS.text,
-
         borderWidth: 1,
         borderColor: COLORS.border,
     },

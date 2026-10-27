@@ -49,6 +49,16 @@ export default function useAuthViewModel() {
     }
 
     function login(email, senha) {
+        if (!email?.trim()) {
+            setErro('Informe um e-mail válido.');
+            return Promise.reject(new Error('E-mail obrigatório'));
+        }
+
+        if (!senha?.trim()) {
+            setErro('Informe uma senha.');
+            return Promise.reject(new Error('Senha obrigatória'));
+        }
+
         return executar(() => entrar(email, senha));
     }
 

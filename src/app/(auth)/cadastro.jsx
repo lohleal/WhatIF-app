@@ -58,7 +58,7 @@ export default function Cadastro() {
 
         try {
             await cadastro(nome, email, senha);
-
+            router.replace('/login');
             Alert.alert(
                 'Cadastro realizado!',
                 'Sua conta foi criada com sucesso.',
@@ -275,7 +275,7 @@ export default function Cadastro() {
                                 </Text>
 
                             </Pressable>
-                            
+
                             {erro ? (
                                 <Text style={{ color: 'red', textAlign: 'center', marginTop: 8 }}>
                                     {erro}
