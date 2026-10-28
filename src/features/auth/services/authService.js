@@ -12,41 +12,75 @@ import {
   setDoc,
 } from 'firebase/firestore';
 
-import { auth, db } from '../../../services/firebase/firebaseConfig';
+import {
+  auth,
+  db,
+} from '../../../services/firebase/firebaseConfig';
 
-export async function cadastrarUsuario(nome, email, senha) {
-  const credencial = await createUserWithEmailAndPassword(
-    auth,
-    email.trim(),
+export async function cadastrarUsuario(
+    nome,
+    sobrenome,
+    email,
+    telefone,
     senha
-  );
+) {
+    const nomeFormatado = nome.trim();
+    const sobrenomeFormatado = sobrenome.trim();
+    const emailFormatado = email.trim().toLowerCase();
+    const telefoneFormatado = telefone.trim();
 
-  const usuario = credencial.user;
+    // Cria a conta no Firebase Authentication.
+    const credencial = await createUserWithEmailAndPassword(
+        auth,
+        emailFormatado,
+        senha
+    );
 
-  await updateProfile(usuario, {
-    displayName: nome.trim(),
-  });
+    const usuario = credencial.user;
 
-  await setDoc(doc(db, 'users', usuario.uid), {
-    nome: nome.trim(),
-    email: usuario.email,
-    grupoId: null,
-    criadoEm: serverTimestamp(),
-  });
+    try {
+        // Salva o nome completo no perfil do Authentication.
+        await updateProfile(usuario, {
+            displayName: `${nomeFormatado} ${sobrenomeFormatado}`,
+        });
 
-  return usuario;
+        // Salva os demais dados no Firestore.
+        await setDoc(doc(db, 'users', usuario.uid), {
+            nome: nomeFormatado,
+            sobrenome: sobrenomeFormatado,
+            email: emailFormatado,
+            telefone: telefoneFormatado,
+            grupoId: null,
+            criadoEm: serverTimestamp(),
+        });
+
+        return usuario;
+    } catch (error) {
+        // Evita deixar uma conta de autenticação criada
+        // quando a gravação dos dados falha.
+        try {
+            await usuario.delete();
+        } catch (deleteError) {
+            console.log(
+                'Não foi possível remover a conta incompleta:',
+                deleteError.message
+            );
+        }
+
+        throw error;
+    }
 }
 
 export async function entrar(email, senha) {
-  const credencial = await signInWithEmailAndPassword(
-    auth,
-    email.trim(),
-    senha
-  );
+    const credencial = await signInWithEmailAndPassword(
+        auth,
+        email.trim().toLowerCase(),
+        senha
+    );
 
-  return credencial.user;
+    return credencial.user;
 }
 
 export async function sair() {
-  await signOut(auth);
+    await signOut(auth);
 }

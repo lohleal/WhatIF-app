@@ -60,22 +60,19 @@ export default function Login() {
 
     return (
         <SafeAreaView style={styles.safeArea}>
+    <View style={styles.screen}>
+        <Image
+            source={require('../../../assets/images/login-background.png')}
+            style={styles.backgroundImage}
+            resizeMode="cover"
+            pointerEvents="none"
+        />
 
-            <View style={styles.screen}>
-                <Image
-                    source={require('../../../assets/images/login-background.png')}
-                    style={styles.backgroundImage}
-                    resizeMode="cover"
-                    pointerEvents="none"
-                />
-
-                <KeyboardAvoidingView
-                    style={styles.container}
-                    behavior={
-                        Platform.OS === 'ios' ? 'padding' : 'height'
-                    }
-                    keyboardVerticalOffset={0}
-                >
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={0}
+        >
                     <ScrollView
                         ref={scrollViewRef}
                         contentContainerStyle={[
@@ -397,7 +394,7 @@ const styles = StyleSheet.create({
     footer: {
         marginTop: 20,
         textAlign: 'center',
-        color: COLORS.textSecondary,
+color: '#FFFFFF',
         fontSize: 13,
     },
 

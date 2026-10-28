@@ -18,7 +18,6 @@ export default function useAuthViewModel() {
         try {
             return await operacao();
         } catch (error) {
-
             console.log('Erro Firebase:', error.code, error.message);
 
             let mensagem = 'Não foi possível concluir a operação.';
@@ -27,16 +26,21 @@ export default function useAuthViewModel() {
                 case 'auth/email-already-in-use':
                     mensagem = 'Este e-mail já está cadastrado.';
                     break;
+
                 case 'auth/invalid-email':
                     mensagem = 'Informe um e-mail válido.';
                     break;
+
                 case 'auth/weak-password':
                     mensagem = 'Escolha uma senha mais forte.';
                     break;
+
                 case 'auth/invalid-credential':
                     mensagem = 'E-mail ou senha incorretos.';
                     break;
+
                 case 'permission-denied':
+                case 'firestore/permission-denied':
                     mensagem = 'Você não tem permissão para esta operação.';
                     break;
             }
@@ -50,25 +54,47 @@ export default function useAuthViewModel() {
 
     function login(email, senha) {
         if (!email?.trim()) {
-            setErro('Informe um e-mail válido.');
+            setErro('Informe seu e-mail.');
             return Promise.reject(new Error('E-mail obrigatório'));
         }
 
         if (!senha?.trim()) {
-            setErro('Informe uma senha.');
+            setErro('Informe sua senha.');
             return Promise.reject(new Error('Senha obrigatória'));
         }
 
         return executar(() => entrar(email, senha));
     }
 
-    function cadastro(nome, email, senha) {
+    function cadastro(nome, sobrenome, email, telefone, senha) {
         if (!nome?.trim()) {
             setErro('Informe seu nome.');
             return Promise.reject(new Error('Nome obrigatório'));
         }
 
-        return executar(() => cadastrarUsuario(nome, email, senha));
+        if (!sobrenome?.trim()) {
+            setErro('Informe seu sobrenome.');
+            return Promise.reject(new Error('Sobrenome obrigatório'));
+        }
+
+        if (!email?.trim()) {
+            setErro('Informe seu e-mail.');
+            return Promise.reject(new Error('E-mail obrigatório'));
+        }
+
+        if (!telefone?.trim()) {
+            setErro('Informe seu telefone.');
+            return Promise.reject(new Error('Telefone obrigatório'));
+        }
+
+        if (!senha) {
+            setErro('Informe sua senha.');
+            return Promise.reject(new Error('Senha obrigatória'));
+        }
+
+        return executar(() =>
+            cadastrarUsuario(nome, sobrenome, email, telefone, senha)
+        );
     }
 
     function logout() {

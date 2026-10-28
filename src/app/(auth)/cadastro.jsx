@@ -1,3 +1,4 @@
+
 import { useRef, useState } from 'react';
 
 import {
@@ -16,9 +17,8 @@ import {
 
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import useAuthViewModel from '../../features/auth/viewmodels/useAuthViewModel';
-
 import { COLORS } from '../../constants/colors';
+import useAuthViewModel from '../../features/auth/viewmodels/useAuthViewModel';
 
 export default function Cadastro() {
     const { cadastro, loading, erro } = useAuthViewModel();
@@ -26,7 +26,9 @@ export default function Cadastro() {
     const scrollViewRef = useRef(null);
 
     const [nome, setNome] = useState('');
+    const [sobrenome, setSobrenome] = useState('');
     const [email, setEmail] = useState('');
+    const [telefone, setTelefone] = useState('');
     const [senha, setSenha] = useState('');
     const [confirmarSenha, setConfirmarSenha] = useState('');
 
@@ -44,36 +46,40 @@ export default function Cadastro() {
         Math.min(34, width * 0.082)
     );
 
-
     async function handleCadastro() {
-        if (!nome.trim() || !email.trim() || !senha || !confirmarSenha) {
+        if (
+            !nome.trim() ||
+            !sobrenome.trim() ||
+            !email.trim() ||
+            !telefone.trim() ||
+            !senha ||
+            !confirmarSenha
+        ) {
             Alert.alert('Atenção', 'Preencha todos os campos.');
             return;
         }
 
         if (senha !== confirmarSenha) {
-            Alert.alert('Senhas diferentes', 'As senhas digitadas não coincidem.');
+            Alert.alert(
+                'Senhas diferentes',
+                'As senhas digitadas não coincidem.'
+            );
             return;
         }
 
         try {
-            await cadastro(nome, email, senha);
-            router.replace('/login');
+            await cadastro(nome, sobrenome, email, telefone, senha);
+
             Alert.alert(
                 'Cadastro realizado!',
-                'Sua conta foi criada com sucesso.',
-                [
-                    {
-                        text: 'Continuar',
-                        onPress: () => router.replace('/login'),
-                    },
-                ]
+                'Sua conta foi criada com sucesso.'
             );
+
+            router.replace('/login');
         } catch (error) {
             // A mensagem será exibida pela variável erro na interface.
         }
     }
-
 
     function handlePasswordFocus() {
         setTimeout(() => {
@@ -85,269 +91,242 @@ export default function Cadastro() {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <KeyboardAvoidingView
-                style={styles.container}
-                behavior={
-                    Platform.OS === 'ios'
-                        ? 'padding'
-                        : 'height'
-                }
-                keyboardVerticalOffset={0}
-            >
-                <ScrollView
-                    ref={scrollViewRef}
-                    contentContainerStyle={[
-                        styles.content,
-                        {
-                            paddingHorizontal:
-                                horizontalPadding,
-                        },
-                    ]}
-                    keyboardShouldPersistTaps="handled"
-                    keyboardDismissMode={
-                        Platform.OS === 'ios'
-                            ? 'interactive'
-                            : 'on-drag'
-                    }
-                    showsVerticalScrollIndicator={false}
+            <View style={styles.screen}>
+                {/* Imagem de fundo, seguindo a estrutura do login */}
+                <Image
+                    source={require('../../../assets/images/cadastro-background.png')}
+                    style={styles.backgroundImage}
+                    resizeMode="cover"
+                    pointerEvents="none"
+                />
+
+                <KeyboardAvoidingView
+                    style={styles.container}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    keyboardVerticalOffset={0}
                 >
-                    <View>
-                        <View style={styles.header}>
-                            <Image
-                                source={require('../../../assets/images/WhatIFicon.png')}
-                                style={styles.logo}
-                                resizeMode="contain"
-                            />
+                    <ScrollView
+                        ref={scrollViewRef}
+                        contentContainerStyle={[
+                            styles.content,
+                            { paddingHorizontal: horizontalPadding },
+                        ]}
+                        keyboardShouldPersistTaps="handled"
+                        keyboardDismissMode={
+                            Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+                        }
+                        showsVerticalScrollIndicator={false}
+                    >
 
-                            <Text style={styles.appName}>
-                                WHAT IF APP
-                            </Text>
+                        <View>
+                            <View style={styles.header}>
+                                <Image
+                                    source={require('../../../assets/images/WhatIFicon.png')}
+                                    style={styles.logo}
+                                    resizeMode="contain"
+                                />
 
-                            <Text style={styles.subtitle}>
-                                Saúde mental e{'\n'}
-                                bem-estar estudantil
-                            </Text>
-                        </View>
-
-                        <View
-                            style={[
-                                styles.titleContainer,
-                                compactScreen &&
-                                styles.titleContainerCompact,
-                            ]}
-                        >
-                            <Text
-                                style={[
-                                    styles.title,
-                                    {
-                                        fontSize: titleSize,
-                                        lineHeight:
-                                            titleSize + 5,
-                                    },
-                                ]}
-                            >
-                                Crie sua{' '}
-                                <Text
-                                    style={
-                                        styles.highlight
-                                    }
-                                >
-                                    conta
-                                </Text>
-                            </Text>
-
-                            <Text
-                                style={
-                                    styles.description
-                                }
-                            >
-                                Vamos começar?
-                            </Text>
-
-                            <Text
-                                style={
-                                    styles.description
-                                }
-                            >
-                                Preencha seus dados para
-                            </Text>
-
-                            <Text
-                                style={
-                                    styles.descriptionHighlight
-                                }
-                            >
-                                fazer parte do WhatIF
-                            </Text>
-                        </View>
-
-                        <View
-                            style={[
-                                styles.form,
-                                compactScreen &&
-                                styles.formCompact,
-                            ]}
-                        >
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Nome"
-                                placeholderTextColor={
-                                    COLORS.textSecondary
-                                }
-                                value={nome}
-                                onChangeText={setNome}
-                                autoCapitalize="words"
-                                returnKeyType="next"
-                            />
-
-                            <TextInput
-                                style={styles.input}
-                                placeholder="E-mail"
-                                placeholderTextColor={
-                                    COLORS.textSecondary
-                                }
-                                keyboardType="email-address"
-                                value={email}
-                                onChangeText={setEmail}
-                                autoCapitalize="none"
-                                returnKeyType="next"
-                            />
-
-                            <Pressable
-                                style={styles.input}
-                            >
-                                <Text
-                                    style={
-                                        styles.selectPlaceholder
-                                    }
-                                >
-                                    Selecione sua equipe
+                                <Text style={styles.appName}>
+                                    WHAT IF APP
                                 </Text>
 
-                                <Text
-                                    style={
-                                        styles.selectArrow
-                                    }
-                                >
-                                    ↓
+                                {/*
+                                <Text style={styles.subtitle}>
+                                    Saúde mental e{'\n'}
+                                    bem-estar estudantil
                                 </Text>
-                            </Pressable>
-
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Senha"
-                                placeholderTextColor={
-                                    COLORS.textSecondary
-                                }
-                                value={senha}
-                                onChangeText={setSenha}
-                                secureTextEntry
-                                returnKeyType="next"
-                                onFocus={
-                                    handlePasswordFocus
-                                }
-                            />
-
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Confirmar senha"
-                                placeholderTextColor={
-                                    COLORS.textSecondary
-                                }
-                                value={confirmarSenha}
-                                onChangeText={setConfirmarSenha}
-                                secureTextEntry
-                                returnKeyType="done"
-                                onFocus={
-                                    handlePasswordFocus
-                                }
-                            />
-
-                            <Pressable
-                                style={
-                                    styles.createButton
-                                }
-                                onPress={handleCadastro}
-                                disabled={loading}
-                            >
-                                <Text style={styles.createButtonText}>
-                                    {loading ? 'Criando conta...' : 'Criar conta'}
-                                </Text>
-
-                            </Pressable>
-
-                            {erro ? (
-                                <Text style={{ color: 'red', textAlign: 'center', marginTop: 8 }}>
-                                    {erro}
-                                </Text>
-                            ) : null}
+                                */}
+                            </View>
 
                             <View
-                                style={
-                                    styles.loginContainer
-                                }
+                                style={[
+                                    styles.titleContainer,
+                                    compactScreen &&
+                                    styles.titleContainerCompact,
+                                ]}
                             >
                                 <Text
-                                    style={
-                                        styles.loginQuestion
-                                    }
+                                    style={[
+                                        styles.title,
+                                        {
+                                            fontSize: titleSize,
+                                            lineHeight: titleSize + 5,
+                                        },
+                                    ]}
                                 >
-                                    Já possui uma conta?
+                                    Crie sua{' '}
+                                    <Text style={styles.highlight}>
+                                        conta
+                                    </Text>
                                 </Text>
 
-                                <Pressable
-                                    onPress={() =>
-                                        router.replace(
-                                            '/login'
-                                        )
-                                    }
-                                >
-                                    <Text
-                                        style={
-                                            styles.loginLink
-                                        }
-                                    >
-                                        Entrar
+                                <Text style={styles.description}>
+                                    Vamos começar?
+                                </Text>
+
+                                <Text style={styles.description}>
+                                    Preencha seus dados para
+                                </Text>
+
+                                <Text style={styles.descriptionHighlight}>
+                                    fazer parte do WhatIF
+                                </Text>
+                            </View>
+
+                            <View
+                                style={[
+                                    styles.form,
+                                    compactScreen && styles.formCompact,
+                                ]}
+                            >
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Nome"
+                                    placeholderTextColor={COLORS.textSecondary}
+                                    value={nome}
+                                    onChangeText={setNome}
+                                    autoCapitalize="words"
+                                    returnKeyType="next"
+                                />
+
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Sobrenome"
+                                    placeholderTextColor={COLORS.textSecondary}
+                                    value={sobrenome}
+                                    onChangeText={setSobrenome}
+                                    autoCapitalize="words"
+                                    returnKeyType="next"
+                                />
+
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="E-mail"
+                                    placeholderTextColor={COLORS.textSecondary}
+                                    keyboardType="email-address"
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    returnKeyType="next"
+                                />
+
+                                <Pressable style={styles.input}>
+                                    <Text style={styles.selectPlaceholder}>
+                                        Selecione sua equipe
+                                    </Text>
+
+                                    <Text style={styles.selectArrow}>
+                                        ↓
                                     </Text>
                                 </Pressable>
+
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Telefone"
+                                    placeholderTextColor={COLORS.textSecondary}
+                                    value={telefone}
+                                    onChangeText={setTelefone}
+                                    keyboardType="phone-pad"
+                                    returnKeyType="next"
+                                />
+
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Senha"
+                                    placeholderTextColor={COLORS.textSecondary}
+                                    value={senha}
+                                    onChangeText={setSenha}
+                                    secureTextEntry
+                                    autoCapitalize="none"
+                                    returnKeyType="next"
+                                    onFocus={handlePasswordFocus}
+                                />
+
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Confirmar senha"
+                                    placeholderTextColor={COLORS.textSecondary}
+                                    value={confirmarSenha}
+                                    onChangeText={setConfirmarSenha}
+                                    secureTextEntry
+                                    autoCapitalize="none"
+                                    returnKeyType="done"
+                                    onFocus={handlePasswordFocus}
+                                />
+
+                                <Pressable
+                                    style={styles.createButton}
+                                    onPress={handleCadastro}
+                                    disabled={loading}
+                                >
+                                    <Text style={styles.createButtonText}>
+                                        {loading
+                                            ? 'Criando conta...'
+                                            : 'Criar conta'}
+                                    </Text>
+                                </Pressable>
+
+                                {erro ? (
+                                    <Text style={styles.error}>
+                                        {erro}
+                                    </Text>
+                                ) : null}
+
+                                <View style={styles.loginContainer}>
+                                    <Text style={styles.loginQuestion}>
+                                        Já possui uma conta?
+                                    </Text>
+
+                                    <Pressable
+                                        onPress={() => router.replace('/login')}
+                                    >
+                                        <Text style={styles.loginLink}>
+                                            Entrar
+                                        </Text>
+                                    </Pressable>
+                                </View>
                             </View>
                         </View>
-                    </View>
 
-                    <Text style={styles.footer}>
-                        Desenvolvido para estudantes do{' '}
-                        <Text
-                            style={
-                                styles.footerHighlight
-                            }
-                        >
-                            IFPR
+                        <Text style={styles.footer}>
+                            Desenvolvido para estudantes do{' '}
+                            <Text style={styles.footerHighlight}>IFPR</Text>
                         </Text>
-                    </Text>
-                </ScrollView>
-            </KeyboardAvoidingView>
+                    </ScrollView>
+                </KeyboardAvoidingView>
+            </View>
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    screen: {
+        flex: 1,
+        position: 'relative',
+        backgroundColor: 'transparent',
+    },
+
+    backgroundImage: {
+        ...StyleSheet.absoluteFillObject,
+        width: '100%',
+        height: '100%',
+    },
+
     safeArea: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: 'transparent',
     },
 
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: 'transparent',
     },
 
     content: {
         flexGrow: 1,
-
-        paddingTop: 18,
-        paddingBottom: 16,
-
-        justifyContent: 'space-between',
+        paddingTop: 0,
+        paddingBottom: 0,
     },
 
     logo: {
@@ -368,10 +347,8 @@ const styles = StyleSheet.create({
 
     subtitle: {
         marginTop: 4,
-
         fontSize: 13,
         lineHeight: 17,
-
         textAlign: 'center',
         color: COLORS.text,
     },
@@ -397,19 +374,15 @@ const styles = StyleSheet.create({
 
     description: {
         marginTop: 8,
-
         fontSize: 15,
         textAlign: 'center',
-
         color: COLORS.textSecondary,
     },
 
     descriptionHighlight: {
         marginTop: 2,
-
         fontSize: 15,
         textAlign: 'center',
-
         color: COLORS.primary,
         fontWeight: '500',
     },
@@ -425,20 +398,14 @@ const styles = StyleSheet.create({
 
     input: {
         minHeight: 54,
-
         backgroundColor: COLORS.surface,
         borderRadius: 27,
-
         paddingHorizontal: 22,
-
         marginBottom: 10,
-
         fontSize: 16,
         color: COLORS.text,
-
         borderWidth: 1,
         borderColor: COLORS.border,
-
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -457,11 +424,8 @@ const styles = StyleSheet.create({
     createButton: {
         minHeight: 54,
         borderRadius: 27,
-
         marginTop: 4,
-
         backgroundColor: COLORS.primary,
-
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -472,13 +436,17 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
 
+    error: {
+        color: '#D32F2F',
+        textAlign: 'center',
+        marginTop: 8,
+    },
+
     loginContainer: {
         marginTop: 17,
-
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-
         gap: 5,
     },
 
@@ -495,9 +463,7 @@ const styles = StyleSheet.create({
 
     footer: {
         marginTop: 20,
-
         textAlign: 'center',
-
         color: COLORS.textSecondary,
         fontSize: 13,
     },

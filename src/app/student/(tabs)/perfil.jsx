@@ -16,10 +16,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../../constants/colors';
 
 import ProfileInfoRow from '../../../features/profile/components/profileInfoRow';
+import useProfileViewModel from '../../../features/profile/viewmodels/useProfileViewModel';
 
 export default function Perfil() {
-    const router = useRouter();
 
+    const router = useRouter();
+    const { perfil, loading, erro } = useProfileViewModel();
     const { width } = useWindowDimensions();
 
     const horizontalPadding = Math.max(
@@ -32,13 +34,12 @@ export default function Perfil() {
      * Depois virão do usuário autenticado.
      */
     const user = {
-        firstName: 'Giovanna',
-        lastName: 'Silva',
-        username: 'giovannasilva',
-        email: 'giovanna.silva@email.com',
-        group: 'Grupo A',
-        phone: '(41) 98765-4321',
-        birthDate: '14 de março de 2005',
+        firstName: perfil?.nome ?? '',
+        lastName: perfil?.sobrenome ?? '',
+        email: perfil?.email ?? '',
+        phone: perfil?.telefone ?? '',
+        group: perfil?.grupoId ? perfil.grupoId : 'Sem grupo vinculado',
+        birthDate: 'Não informado',
     };
 
     function handleEditProfile() {
@@ -62,176 +63,185 @@ export default function Perfil() {
             style={styles.background}
         >
             <SafeAreaView style={styles.safeArea}>
-                <ScrollView
-                    contentContainerStyle={[
-                        styles.content,
-                        {
-                            paddingHorizontal:
-                                horizontalPadding,
-                        },
-                    ]}
-                    showsVerticalScrollIndicator={false}
-                >
-                    {/* CABEÇALHO */}
 
-                    <View style={styles.topRow}>
-                        <View>
-                            <Text style={styles.pageTitle}>
-                                Meu{' '}
-                                <Text style={styles.highlight}>
-                                    perfil
-                                </Text>
-                            </Text>
-
-                            <Text style={styles.pageSubtitle}>
-                                Aqui estão suas informações{'\n'}
-                                e preferências no What IF App.
-                            </Text>
-                        </View>
-
-                        <Pressable style={styles.notificationButton}>
-                            <MaterialCommunityIcons
-                                name="bell-outline"
-                                size={26}
-                                color={COLORS.primary}
-                            />
-
-                            <View style={styles.notificationDot} />
-                        </Pressable>
+                {loading && (
+                    <View style={styles.content}>
+                        <Text>Carregando perfil...</Text>
                     </View>
+                )}
 
-                    {/* FOTO */}
+                {!loading && erro !== '' && (
+                    <View style={styles.content}>
+                        <Text>{erro}</Text>
+                    </View>
+                )}
+                {!loading && !erro && (
+                    <ScrollView
+                        contentContainerStyle={[
+                            styles.content,
+                            {
+                                paddingHorizontal:
+                                    horizontalPadding,
+                            },
+                        ]}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {/* CABEÇALHO */}
 
-                    <View style={styles.profileArea}>
-                        <View style={styles.avatarDecoration}>
-                            <View style={styles.avatar}>
-                                <MaterialCommunityIcons
-                                    name="account"
-                                    size={84}
-                                    color="#7BA05F"
-                                />
+                        <View style={styles.topRow}>
+                            <View>
+                                <Text style={styles.pageTitle}>
+                                    Meu{' '}
+                                    <Text style={styles.highlight}>
+                                        perfil
+                                    </Text>
+                                </Text>
                             </View>
 
-                            <Pressable style={styles.cameraButton}>
+                            <Pressable style={styles.notificationButton}>
                                 <MaterialCommunityIcons
-                                    name="camera-outline"
-                                    size={23}
-                                    color="#FFFFFF"
+                                    name="bell-outline"
+                                    size={26}
+                                    color={COLORS.primary}
                                 />
+
+                                <View style={styles.notificationDot} />
                             </Pressable>
                         </View>
 
-                        <Text style={styles.fullName}>
-                            {user.firstName}{' '}
-                            <Text style={styles.highlight}>
-                                {user.lastName}
+                        {/* FOTO */}
+
+                        <View style={styles.profileArea}>
+                            <View style={styles.avatarDecoration}>
+                                <View style={styles.avatar}>
+                                    <MaterialCommunityIcons
+                                        name="account"
+                                        size={84}
+                                        color="#7BA05F"
+                                    />
+                                </View>
+
+                                <Pressable style={styles.cameraButton}>
+                                    <MaterialCommunityIcons
+                                        name="camera-outline"
+                                        size={23}
+                                        color="#FFFFFF"
+                                    />
+                                </Pressable>
+                            </View>
+
+                            <Text style={styles.fullName}>
+                                {user.firstName}{' '}
+                                <Text style={styles.highlight}>
+                                    {user.lastName}
+                                </Text>
                             </Text>
-                        </Text>
 
-                        <Text style={styles.username}>
+                            {/*<Text style={styles.username}>
                             @{user.username}
-                        </Text>
-                    </View>
+                        </Text>*/}
+                        </View>
 
-                    {/* DADOS */}
+                        {/* DADOS */}
 
-                    <View style={styles.informationList}>
-                        <ProfileInfoRow
-                            icon="account"
-                            label="Nome"
-                            value={user.firstName}
-                        />
+                        <View style={styles.informationList}>
+                            <ProfileInfoRow
+                                icon="account"
+                                label="Nome"
+                                value={user.firstName}
+                            />
 
-                        <ProfileInfoRow
-                            icon="account-outline"
-                            label="Sobrenome"
-                            value={user.lastName}
-                        />
+                            <ProfileInfoRow
+                                icon="account-outline"
+                                label="Sobrenome"
+                                value={user.lastName}
+                            />
 
-                        <ProfileInfoRow
+                            {/*<ProfileInfoRow
                             icon="at"
                             label="Nome de usuário"
                             value={user.username}
-                        />
+                        />*/}
 
-                        <ProfileInfoRow
-                            icon="email-outline"
-                            label="E-mail"
-                            value={user.email}
-                        />
+                            <ProfileInfoRow
+                                icon="email-outline"
+                                label="E-mail"
+                                value={user.email}
+                            />
 
-                        <ProfileInfoRow
-                            icon="account-group"
-                            label="Grupo participante"
-                            value={user.group}
-                        />
+                            <ProfileInfoRow
+                                icon="account-group"
+                                label="Grupo participante"
+                                value={user.group}
+                            />
 
-                        <ProfileInfoRow
-                            icon="phone-outline"
-                            label="Telefone"
-                            value={user.phone}
-                        />
+                            <ProfileInfoRow
+                                icon="phone-outline"
+                                label="Telefone"
+                                value={user.phone}
+                            />
 
-                        <ProfileInfoRow
-                            icon="calendar-outline"
-                            label="Data de nascimento"
-                            value={user.birthDate}
-                        />
+                            <ProfileInfoRow
+                                icon="calendar-outline"
+                                label="Data de nascimento"
+                                value={user.birthDate}
+                            />
 
-                        <ProfileInfoRow
-                            icon="lock-outline"
-                            label="Senha"
-                            value="••••••••"
-                            password
-                        />
-                    </View>
+                            <ProfileInfoRow
+                                icon="lock-outline"
+                                label="Senha"
+                                value="••••••••"
+                                password
+                            />
+                        </View>
 
-                    {/* EDITAR */}
+                        {/* EDITAR */}
 
-                    <Pressable
-                        onPress={handleEditProfile}
-                        style={({ pressed }) => [
-                            styles.editButton,
-                            pressed && styles.buttonPressed,
-                        ]}
-                    >
-                        <MaterialCommunityIcons
-                            name="pencil-outline"
-                            size={24}
-                            color="#FFFFFF"
-                        />
+                        <Pressable
+                            onPress={handleEditProfile}
+                            style={({ pressed }) => [
+                                styles.editButton,
+                                pressed && styles.buttonPressed,
+                            ]}
+                        >
+                            <MaterialCommunityIcons
+                                name="pencil-outline"
+                                size={24}
+                                color="#FFFFFF"
+                            />
 
-                        <Text style={styles.editButtonText}>
-                            Editar perfil
-                        </Text>
+                            <Text style={styles.editButtonText}>
+                                Editar perfil
+                            </Text>
 
-                        <MaterialCommunityIcons
-                            name="arrow-right"
-                            size={26}
-                            color="#FFFFFF"
-                        />
-                    </Pressable>
+                            <MaterialCommunityIcons
+                                name="arrow-right"
+                                size={26}
+                                color="#FFFFFF"
+                            />
+                        </Pressable>
 
-                    {/* SAIR */}
+                        {/* SAIR */}
 
-                    <Pressable
-                        onPress={handleLogout}
-                        style={({ pressed }) => [
-                            styles.logoutButton,
-                            pressed && styles.buttonPressed,
-                        ]}
-                    >
-                        <MaterialCommunityIcons
-                            name="logout"
-                            size={23}
-                            color="#F25555"
-                        />
+                        <Pressable
+                            onPress={handleLogout}
+                            style={({ pressed }) => [
+                                styles.logoutButton,
+                                pressed && styles.buttonPressed,
+                            ]}
+                        >
+                            <MaterialCommunityIcons
+                                name="logout"
+                                size={23}
+                                color="#F25555"
+                            />
 
-                        <Text style={styles.logoutText}>
-                            Sair da conta
-                        </Text>
-                    </Pressable>
-                </ScrollView>
+                            <Text style={styles.logoutText}>
+                                Sair da conta
+                            </Text>
+                        </Pressable>
+                    </ScrollView>
+                )}
             </SafeAreaView>
         </ImageBackground>
     );
