@@ -90,12 +90,12 @@ export default function Perfil() {
 
                         <View style={styles.topRow}>
                             <View>
-                                <Text style={styles.pageTitle}>
+                                {/* <Text style={styles.pageTitle}>
                                     Meu{' '}
                                     <Text style={styles.highlight}>
                                         perfil
                                     </Text>
-                                </Text>
+                                </Text> */}
                             </View>
 
                             <Pressable style={styles.notificationButton}>

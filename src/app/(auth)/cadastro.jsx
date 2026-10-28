@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import {
     Alert,
     Image,
+    ImageBackground,
     KeyboardAvoidingView,
     Platform,
     Pressable,
@@ -90,16 +91,12 @@ export default function Cadastro() {
     }
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <View style={styles.screen}>
-                {/* Imagem de fundo, seguindo a estrutura do login */}
-                <Image
-                    source={require('../../../assets/images/cadastro-background.png')}
-                    style={styles.backgroundImage}
-                    resizeMode="cover"
-                    pointerEvents="none"
-                />
-
+        <ImageBackground
+            source={require('../../../assets/images/cadastro-background.png')}
+            style={styles.background}
+            resizeMode="cover"
+        >
+            <SafeAreaView style={styles.safeArea}>
                 <KeyboardAvoidingView
                     style={styles.container}
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -117,6 +114,7 @@ export default function Cadastro() {
                         }
                         showsVerticalScrollIndicator={false}
                     >
+                        {/* Mantenha aqui TODO o conteúdo atual do cadastro */}
 
                         <View>
                             <View style={styles.header}>
@@ -127,7 +125,7 @@ export default function Cadastro() {
                                 />
 
                                 <Text style={styles.appName}>
-                                    WHAT IF APP
+                                    WHATIF APP
                                 </Text>
 
                                 {/*
@@ -154,15 +152,15 @@ export default function Cadastro() {
                                         },
                                     ]}
                                 >
-                                    Crie sua{' '}
+                                    Criar{' '}
                                     <Text style={styles.highlight}>
                                         conta
                                     </Text>
                                 </Text>
 
-                                <Text style={styles.description}>
+                                {/* <Text style={styles.description}>
                                     Vamos começar?
-                                </Text>
+                                </Text> */}
 
                                 <Text style={styles.description}>
                                     Preencha seus dados para
@@ -289,18 +287,21 @@ export default function Cadastro() {
                             </View>
                         </View>
 
-                        <Text style={styles.footer}>
+                        {/* <Text style={styles.footer}>
                             Desenvolvido para estudantes do{' '}
                             <Text style={styles.footerHighlight}>IFPR</Text>
-                        </Text>
+                        </Text> */}
                     </ScrollView>
                 </KeyboardAvoidingView>
-            </View>
-        </SafeAreaView>
+            </SafeAreaView>
+        </ImageBackground>
     );
 }
 
 const styles = StyleSheet.create({
+    background: {
+        flex: 1,
+    },
     screen: {
         flex: 1,
         position: 'relative',
@@ -340,7 +341,7 @@ const styles = StyleSheet.create({
     },
 
     appName: {
-        fontSize: 27,
+        fontSize: 20,
         fontWeight: '700',
         color: COLORS.primary,
     },

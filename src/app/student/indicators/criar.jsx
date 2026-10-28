@@ -107,7 +107,7 @@ export default function CriarIndicador() {
 
         if (type !== 'conclusao' && (!target.trim() || Number(target) <= 0)) {
             Alert.alert(
-                'Defina sua meta',
+                'Defina seu objetivo',
                 'Informe uma quantidade ou duração maior que zero.'
             );
             return;
@@ -152,10 +152,7 @@ export default function CriarIndicador() {
                     </Pressable>
 
                     <View style={styles.headerText}>
-                        <Text style={styles.title}>Criar indicador</Text>
-                        <Text style={styles.subtitle}>
-                            Transforme seus objetivos em pequenas ações.
-                        </Text>
+                        <Text style={styles.title}>Novo indicador</Text>
                     </View>
                 </View>
 
@@ -258,7 +255,7 @@ export default function CriarIndicador() {
                 <View style={[styles.section, styles.purpleSection]}>
                     <SectionTitle
                         icon="flag-outline"
-                        title="Defina sua meta"
+                        title="Defina seu objetivo"
                         color="#9571B4"
                     />
 
@@ -274,7 +271,7 @@ export default function CriarIndicador() {
 
                             <View style={styles.targetRow}>
                                 <View style={styles.targetField}>
-                                    <Text style={styles.label}>Meta diária</Text>
+                                    <Text style={styles.label}>Objetivo diário</Text>
                                     <TextInput
                                         style={styles.input}
                                         placeholder="Ex.: 30"
@@ -316,7 +313,7 @@ export default function CriarIndicador() {
                     />
 
                     <Text style={styles.helper}>
-                        Em quais dias você deseja acompanhar essa meta?
+                        Em quais dias você deseja acompanhar esse indicador?
                     </Text>
 
                     <View style={styles.frequencyOptions}>
@@ -464,10 +461,6 @@ export default function CriarIndicador() {
                         Criar indicador
                     </Text>
                 </Pressable>
-
-                <Text style={styles.footerText}>
-                    Pequenos passos também são progresso.
-                </Text>
             </ScrollView>
         </KeyboardAvoidingView>
     );

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 
 import {
     Image,
+    ImageBackground,
     KeyboardAvoidingView,
     Platform,
     Pressable,
@@ -36,10 +37,10 @@ export default function Login() {
         Math.min(32, width * 0.07)
     );
 
-    const titleSize = Math.max(
-        29,
-        Math.min(37, width * 0.09)
-    );
+  const titleSize = Math.max(
+    25,
+    Math.min(25, width * 0.075)
+);
 
     async function handleLogin() {
         try {
@@ -59,20 +60,18 @@ export default function Login() {
     }
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-    <View style={styles.screen}>
-        <Image
+        <ImageBackground
             source={require('../../../assets/images/login-background.png')}
-            style={styles.backgroundImage}
+            style={styles.background}
             resizeMode="cover"
-            pointerEvents="none"
-        />
-
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={0}
         >
+            <SafeAreaView style={styles.safeArea}>
+                <KeyboardAvoidingView
+                    style={styles.container}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    keyboardVerticalOffset={0}
+                >
+                    {/* Mantenha aqui o ScrollView e todo o conteúdo atual */}
                     <ScrollView
                         ref={scrollViewRef}
                         contentContainerStyle={[
@@ -230,13 +229,18 @@ export default function Login() {
                             </Text>
                         </Text>
                     </ScrollView>
+
                 </KeyboardAvoidingView>
-            </View>
-        </SafeAreaView>
+            </SafeAreaView>
+        </ImageBackground>
     );
 }
 
 const styles = StyleSheet.create({
+
+    background: {
+        flex: 1,
+    },
 
     loginError: {
         color: '#D32F2F',
@@ -291,14 +295,14 @@ const styles = StyleSheet.create({
     },
 
     appName: {
-        fontSize: 27,
+        fontSize: 20,
         fontWeight: '700',
         color: COLORS.primary,
     },
 
     subtitle: {
         marginTop: 4,
-        fontSize: 13,
+        fontSize: 12,
         lineHeight: 17,
         textAlign: 'center',
         color: COLORS.text,
@@ -394,7 +398,7 @@ const styles = StyleSheet.create({
     footer: {
         marginTop: 20,
         textAlign: 'center',
-color: '#FFFFFF',
+        color: '#FFFFFF',
         fontSize: 13,
     },
 
