@@ -14,15 +14,18 @@ import {
     useLocalSearchParams,
     useRouter,
 } from 'expo-router';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS } from '../../../constants/colors.js';
-
 import IndicatorCard from '../../../features/indicators/components/indicatorCard.jsx';
-
 import useIndicatorsViewModel from '../../../features/indicators/viewmodels/use-indicators-view-model.js';
+import { auth, db } from '../../../services/firebase/firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
 
 export default function Indicadores() {
+
     const router = useRouter();
     const { width, height } =
         useWindowDimensions();
@@ -44,38 +47,53 @@ export default function Indicadores() {
      * 7 indicadores → 7 peças
      * 12 indicadores → 12 peças
      */
-    const columns =
-    width < 360 ? 2 : 3;
 
-    const horizontalPadding =
-        Math.max(
-            16,
-            Math.min(
-                22,
-                width * 0.05
-            )
-        );
+    const columns = 4;
 
-    const puzzleWidth =
-        width -
-        horizontalPadding * 2;
+    const horizontalPadding = Math.max(
+        10,
+        Math.min(20, width * 0.05)
+    );
 
-    /*
-     * Faz as peças realmente
-     * se sobreporem nos encaixes.
-     */
-    const overlap =
-    width < 360 ? 16 : 20;
+    const puzzleWidth = width - horizontalPadding * 2;
+
+    // O encaixe diminui junto com o quebra-cabeça
+    const overlap = Math.min(15, puzzleWidth * 0.085);
+    const overlapVertical = Math.min(24, puzzleWidth * 0.14);
 
     const cardWidth =
-        (
-            puzzleWidth +
-            overlap * (columns - 1)
-        ) /
-        columns;
+        (puzzleWidth + overlap * (columns - 1)) / columns;
+
 
     const progressPercentage =
         Math.round(progress * 100);
+
+    const [studentName, setStudentName] = useState('');
+
+    useEffect(() => {
+        async function loadStudentName() {
+            const user = auth.currentUser;
+
+            if (!user) return;
+
+            try {
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+
+                const profileName = userDoc.exists()
+                    ? userDoc.data().name
+                    : '';
+
+                setStudentName(
+                    profileName || user.displayName || name || 'estudante'
+                );
+            } catch (error) {
+                console.error('Erro ao carregar nome:', error);
+                setStudentName(user.displayName || name || 'estudante');
+            }
+        }
+
+        loadStudentName();
+    }, [name]);
 
     function handleIndicatorPress(
         indicator
@@ -86,11 +104,11 @@ export default function Indicadores() {
         );
     }
 
-  function handleCreateIndicator() {
-    router.push(
-        '/student/indicators/criar'
-    );
-}
+    function handleCreateIndicator() {
+        router.push(
+            '/student/indicators/criar'
+        );
+    }
 
     return (
         <ImageBackground
@@ -119,24 +137,8 @@ export default function Indicadores() {
 
                     <View style={styles.topRow}>
                         <View style={styles.header}>
-                            <Text
-                                style={
-                                    styles.greeting
-                                }
-                            >
-                                Olá,{' '}
-                                {name ||
-                                    'estudante'}
-                                ! 
-                            </Text>
-
-                            <Text
-                                style={
-                                    styles.subtitle
-                                }
-                            >
-                                Que tal completar
-                                suas metas de hoje?
+                            <Text style={styles.greeting}>
+                                Olá, {studentName || 'estudante'}!
                             </Text>
                         </View>
 
@@ -221,6 +223,7 @@ export default function Indicadores() {
                                         overlap={
                                             overlap
                                         }
+                                        overlapVertical={overlapVertical}
                                         onPress={() =>
                                             handleIndicatorPress(
                                                 indicator
@@ -379,7 +382,7 @@ export default function Indicadores() {
                         styles.floatingButton,
 
                         pressed &&
-                            styles.floatingButtonPressed,
+                        styles.floatingButtonPressed,
                     ]}
                     onPress={
                         handleCreateIndicator

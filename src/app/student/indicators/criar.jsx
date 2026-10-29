@@ -2,6 +2,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { criarIndicador } from '../../../features/indicators/services/indicatorService';
+
 import {
     Alert,
     KeyboardAvoidingView,
@@ -85,6 +87,7 @@ export default function CriarIndicador() {
     const [selectedDays, setSelectedDays] = useState([]);
     const [reminderEnabled, setReminderEnabled] = useState(true);
     const [reminderTime, setReminderTime] = useState('19:00');
+    const [salvando, setSalvando] = useState(false);
 
     const selectedType = TYPES.find(item => item.id === type);
 
@@ -96,7 +99,10 @@ export default function CriarIndicador() {
         );
     }
 
-    function handleCreate() {
+
+    async function handleCreate() {
+        console.log('Botão Criar Indicador clicado');
+
         if (!name.trim()) {
             Alert.alert(
                 'Dê um nome ao indicador',
@@ -121,10 +127,51 @@ export default function CriarIndicador() {
             return;
         }
 
-        Alert.alert(
-            'Interface pronta!',
-            'O formulário está funcionando. A gravação do indicador será conectada na etapa de desenvolvimento dos dados.'
-        );
+        if (
+            reminderEnabled &&
+            !/^([01]\d|2[0-3]):[0-5]\d$/.test(reminderTime)
+        ) {
+            Alert.alert(
+                'Horário inválido',
+                'Informe um horário válido no formato HH:MM.'
+            );
+            return;
+        }
+
+        try {
+            setSalvando(true);
+
+            console.log('Chamando serviço de indicadores...');
+
+            const id = await criarIndicador({
+                name,
+                description,
+                type,
+                target,
+                unit,
+                frequency,
+                selectedDays,
+                reminderEnabled,
+                reminderTime,
+            });
+
+            console.log('Indicador salvo. ID:', id);
+
+            Alert.alert(
+                'Indicador criado!',
+                'Seu indicador foi salvo com sucesso.',
+                [{ text: 'OK', onPress: () => router.back() }]
+            );
+        } catch (error) {
+            console.error('Erro ao criar indicador:', error);
+
+            Alert.alert(
+                'Erro ao salvar',
+                error.message || 'Não foi possível salvar o indicador.'
+            );
+        } finally {
+            setSalvando(false);
+        }
     }
 
     return (
@@ -444,21 +491,23 @@ export default function CriarIndicador() {
                 </View>
 
                 {/* Botão de criação */}
+
                 <Pressable
                     onPress={handleCreate}
+                    disabled={salvando}
                     style={({ pressed }) => [
                         styles.createButton,
-                        pressed && styles.createButtonPressed,
+                        (pressed || salvando) && styles.createButtonPressed,
                     ]}
                 >
                     <MaterialCommunityIcons
-                        name="plus-circle-outline"
+                        name={salvando ? 'progress-clock' : 'plus-circle-outline'}
                         size={23}
                         color="#FFFFFF"
                     />
 
                     <Text style={styles.createButtonText}>
-                        Criar indicador
+                        {salvando ? 'Salvando...' : 'Criar indicador'}
                     </Text>
                 </Pressable>
             </ScrollView>
