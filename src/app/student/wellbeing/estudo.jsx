@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import {
   View,
   Text,
@@ -7,6 +8,7 @@ import {
   ScrollView,
   Pressable,
   StyleSheet,
+  Platform,
 } from 'react-native';
 
 const CORES = {
@@ -21,6 +23,14 @@ const CORES = {
   verdeClaro: '#E4F4EC',
   vermelho: '#C95353',
 };
+
+const CATEGORIAS_PADRAO = [
+  'Prova',
+  'Trabalho',
+  'Slides',
+  'Seminário',
+  'Lista de exercícios',
+];
 
 const MATERIAS = [
   'Matemática',
@@ -112,8 +122,25 @@ export default function Estudo() {
   const [metaEditavel, setMetaEditavel] = useState('120');
   const [sessaoAtiva, setSessaoAtiva] = useState(null);
 
-  const [novaTarefa, setNovaTarefa] = useState('');
-  const [tarefas, setTarefas] = useState([]);
+  // Categorias criadas pelo próprio aluno e atividades cadastradas.
+  const [categorias, setCategorias] = useState(CATEGORIAS_PADRAO);
+  const [novaCategoria, setNovaCategoria] = useState('');
+  const [mostrarNovaCategoria, setMostrarNovaCategoria] = useState(false);
+  const [campoDataAberto, setCampoDataAberto] = useState(null);
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState('');
+  const [filtroCategoria, setFiltroCategoria] = useState('Todas');
+  const [filtroStatus, setFiltroStatus] = useState('Todos');
+  const [atividades, setAtividades] = useState([]);
+  const [editandoId, setEditandoId] = useState(null);
+  const [formAtividade, setFormAtividade] = useState({
+    nome: '',
+    materia: '',
+    descricao: '',
+    professor: '',
+    dataInicio: dataLocal(),
+    dataEntrega: '',
+    status: 'Pendente',
+  });
 
   const [periodo, setPeriodo] = useState('dia');
   const [mensagem, setMensagem] = useState('');
@@ -133,13 +160,8 @@ export default function Estudo() {
     ? Math.min(100, Math.round((minutosHoje / metaMinutos) * 100))
     : 0;
 
-  const tarefasPendentes = tarefas.filter(
-    (tarefa) => !tarefa.concluida
-  ).length;
-
-  const tarefasConcluidas = tarefas.filter(
-    (tarefa) => tarefa.concluida
-  ).length;
+  const atividadesPendentes = atividades.filter((item) => item.status !== 'Concluída').length;
+  const atividadesConcluidas = atividades.filter((item) => item.status === 'Concluída').length;
 
   function adicionarRegistro(minutos, nomeMateria, inicio, fim) {
     const duracao = Number(minutos);
@@ -248,42 +270,118 @@ export default function Estudo() {
     setMensagem('Meta diária atualizada!');
   }
 
-  function adicionarTarefa() {
-    const titulo = novaTarefa.trim();
-
-    if (!titulo) {
-      setMensagem('Digite o nome da tarefa.');
+  function adicionarCategoria() {
+    const nome = novaCategoria.trim();
+    if (!nome) {
+      setMensagem('Digite o nome da categoria.');
       return;
     }
-
-    setTarefas((anteriores) => [
-      {
-        id: `${Date.now()}-${Math.random()}`,
-        titulo,
-        concluida: false,
-      },
-      ...anteriores,
-    ]);
-
-    setNovaTarefa('');
-    setMensagem('Tarefa adicionada!');
+    const existe = categorias.some((item) => item.toLowerCase() === nome.toLowerCase());
+    if (existe) {
+      setMensagem('Essa categoria já existe.');
+      return;
+    }
+    setCategorias((anteriores) => [...anteriores, nome]);
+    setCategoriaSelecionada(nome);
+    setFiltroCategoria(nome);
+    setNovaCategoria('');
+    setMostrarNovaCategoria(false);
+    setMensagem('Categoria criada!');
   }
 
-  function alternarTarefa(id) {
-    setTarefas((anteriores) =>
-      anteriores.map((tarefa) =>
-        tarefa.id === id
-          ? { ...tarefa, concluida: !tarefa.concluida }
-          : tarefa
-      )
-    );
+  function atualizarCampoAtividade(campo, valor) {
+    setFormAtividade((anterior) => ({ ...anterior, [campo]: valor }));
   }
 
-  function excluirTarefa(id) {
-    setTarefas((anteriores) =>
-      anteriores.filter((tarefa) => tarefa.id !== id)
-    );
+  function abrirCalendario(campo) {
+    setCampoDataAberto(campo);
   }
+
+  function alterarData(event, dataSelecionada) {
+    if (event.type === 'set' && dataSelecionada && campoDataAberto) {
+      atualizarCampoAtividade(campoDataAberto, dataLocal(dataSelecionada));
+    }
+    setCampoDataAberto(null);
+  }
+
+  function converterDataParaDate(valor) {
+    if (!valor) return new Date();
+    const [ano, mes, dia] = valor.split('-').map(Number);
+    return new Date(ano, mes - 1, dia, 12);
+  }
+
+  function limparFormularioAtividade() {
+    setFormAtividade({
+      nome: '', materia: '', descricao: '', professor: '',
+      dataInicio: dataLocal(), dataEntrega: '', status: 'Pendente',
+    });
+    setCategoriaSelecionada('');
+    setEditandoId(null);
+  }
+
+  function salvarAtividade() {
+    const { nome, materia, descricao, professor, dataInicio, dataEntrega, status } = formAtividade;
+    if (!nome.trim() || !materia.trim() || !descricao.trim() || !professor.trim() || !dataInicio.trim() || !dataEntrega.trim() || !categoriaSelecionada) {
+      setMensagem('Preencha os campos e selecione uma categoria.');
+      return;
+    }
+    const dataValida = (valor) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
+      const [ano, mes, dia] = valor.split('-').map(Number);
+      const data = new Date(ano, mes - 1, dia);
+      return data.getFullYear() === ano && data.getMonth() === mes - 1 && data.getDate() === dia;
+    };
+    if (!dataValida(dataInicio) || !dataValida(dataEntrega)) {
+      setMensagem('Informe datas válidas no formato AAAA-MM-DD (ex.: 2026-11-03).');
+      return;
+    }
+    if (dataEntrega < dataInicio) {
+      setMensagem('A data de entrega não pode ser anterior à data de início.');
+      return;
+    }
+    const atividade = {
+      id: editandoId || `${Date.now()}-${Math.random()}`,
+      nome: nome.trim(), materia: materia.trim(), descricao: descricao.trim(),
+      professor: professor.trim(), dataInicio, dataEntrega,
+      categoria: categoriaSelecionada, status,
+    };
+    if (editandoId) {
+      setAtividades((anteriores) => anteriores.map((item) => item.id === editandoId ? atividade : item));
+      setMensagem('Atividade atualizada!');
+    } else {
+      setAtividades((anteriores) => [...anteriores, atividade]);
+      setMensagem('Atividade cadastrada!');
+    }
+    limparFormularioAtividade();
+  }
+
+  function editarAtividade(item) {
+    setFormAtividade({
+      nome: item.nome, materia: item.materia, descricao: item.descricao,
+      professor: item.professor, dataInicio: item.dataInicio,
+      dataEntrega: item.dataEntrega, status: item.status,
+    });
+    setCategoriaSelecionada(item.categoria);
+    setEditandoId(item.id);
+  }
+
+  function excluirAtividade(id) {
+    setAtividades((anteriores) => anteriores.filter((item) => item.id !== id));
+    setMensagem('Atividade excluída.');
+  }
+
+  function alterarStatus(id, status) {
+    setAtividades((anteriores) => anteriores.map((item) => item.id === id ? { ...item, status } : item));
+  }
+
+  const atividadesFiltradas = atividades
+    .filter((item) => filtroCategoria === 'Todas' || item.categoria === filtroCategoria)
+    .filter((item) => filtroStatus === 'Todos' || item.status === filtroStatus)
+    .sort((a, b) => {
+      if (a.status === 'Concluída' && b.status !== 'Concluída') return 1;
+      if (a.status !== 'Concluída' && b.status === 'Concluída') return -1;
+      return a.dataEntrega.localeCompare(b.dataEntrega);
+    });
 
   const registrosFiltrados = registros
     .filter((registro) => {
@@ -481,73 +579,171 @@ export default function Estudo() {
       </View>
 
       <View style={styles.cartao}>
-        <Text style={styles.tituloSecao}>Minhas tarefas</Text>
-        <Text style={styles.ajuda}>
-          Planeje o que precisa estudar e marque quando concluir.
-        </Text>
+        <Text style={styles.tituloSecao}>Controle de atividades</Text>
 
-        <View style={styles.resumoTarefas}>
-          <Text style={styles.textoResumo}>
-            {tarefasPendentes} pendentes
-          </Text>
-          <Text style={styles.textoResumo}>
-            {tarefasConcluidas} concluídas
-          </Text>
+        <Text style={styles.rotulo}>Tipo de atividade</Text>
+        <View style={styles.listaMaterias}>
+          {categorias.map((categoria) => (
+            <Pressable
+              key={categoria}
+              onPress={() => setCategoriaSelecionada(categoria)}
+              style={[styles.opcaoMateria, categoriaSelecionada === categoria && styles.opcaoSelecionada]}
+            >
+              <Text style={[styles.textoMateria, categoriaSelecionada === categoria && styles.textoSelecionado]}>
+                {categoria}
+              </Text>
+            </Pressable>
+          ))}
+          <Pressable
+            onPress={() => setMostrarNovaCategoria((anterior) => !anterior)}
+            style={[styles.opcaoMateria, mostrarNovaCategoria && styles.opcaoSelecionada]}
+          >
+            <Text style={[styles.textoMateria, mostrarNovaCategoria && styles.textoSelecionado]}>+ Criar categoria</Text>
+          </Pressable>
         </View>
 
-        <TextInput
-          style={styles.input}
-          value={novaTarefa}
-          onChangeText={setNovaTarefa}
-          placeholder="Ex.: Revisar conteúdo de Biologia"
-          placeholderTextColor="#9297A8"
-          onSubmitEditing={adicionarTarefa}
-          returnKeyType="done"
-        />
+        {mostrarNovaCategoria && (
+          <View style={styles.linhaCategoria}>
+            <TextInput
+              style={[styles.input, styles.inputCategoria]}
+              value={novaCategoria}
+              onChangeText={setNovaCategoria}
+              placeholder="Nome da nova categoria"
+              placeholderTextColor="#9297A8"
+              onSubmitEditing={adicionarCategoria}
+              returnKeyType="done"
+            />
+            <Pressable style={styles.botaoAdicionarCategoria} onPress={adicionarCategoria}>
+              <Text style={styles.textoBotaoAdicionarCategoria}>Adicionar</Text>
+            </Pressable>
+          </View>
+        )}
 
-        <Botao
-          titulo="Adicionar tarefa"
-          onPress={adicionarTarefa}
-        />
-
-        {tarefas.length === 0 ? (
-          <Text style={styles.vazio}>
-            Nenhuma tarefa adicionada ainda.
-          </Text>
+        <Text style={styles.tituloFormulario}>{editandoId ? 'Editar atividade' : 'Nova atividade'}</Text>
+        <Text style={styles.rotulo}>Nome da atividade</Text>
+        <TextInput style={styles.input} value={formAtividade.nome} onChangeText={(v) => atualizarCampoAtividade('nome', v)} placeholder="Ex.: Pesquisa sobre sustentabilidade" placeholderTextColor="#9297A8" />
+        <Text style={styles.rotulo}>Matéria</Text>
+        <TextInput style={styles.input} value={formAtividade.materia} onChangeText={(v) => atualizarCampoAtividade('materia', v)} placeholder="Ex.: Biologia" placeholderTextColor="#9297A8" />
+        <Text style={styles.rotulo}>Descrição</Text>
+        <TextInput style={[styles.input, styles.inputMultilinha]} value={formAtividade.descricao} onChangeText={(v) => atualizarCampoAtividade('descricao', v)} placeholder="Descreva o que precisa ser feito" placeholderTextColor="#9297A8" multiline />
+        <Text style={styles.rotulo}>Nome do professor</Text>
+        <TextInput style={styles.input} value={formAtividade.professor} onChangeText={(v) => atualizarCampoAtividade('professor', v)} placeholder="Nome do professor" placeholderTextColor="#9297A8" />
+        <Text style={styles.rotulo}>Data de início</Text>
+        {Platform.OS === 'web' ? (
+          React.createElement('input', {
+            type: 'date',
+            value: formAtividade.dataInicio,
+            onChange: (event) => atualizarCampoAtividade('dataInicio', event.target.value),
+            'aria-label': 'Data de início',
+            style: estilosCampoDataWeb,
+          })
         ) : (
-          tarefas.map((tarefa) => (
-            <View key={tarefa.id} style={styles.linhaTarefa}>
-              <Pressable
-                onPress={() => alternarTarefa(tarefa.id)}
-                style={styles.areaTarefa}
-              >
-                <View
-                  style={[
-                    styles.checkbox,
-                    tarefa.concluida && styles.checkboxMarcado,
-                  ]}
-                >
-                  {tarefa.concluida && (
-                    <Text style={styles.check}>✓</Text>
-                  )}
+          <Pressable style={styles.campoData} onPress={() => abrirCalendario('dataInicio')}>
+            <Text style={styles.textoCampoData}>{formAtividade.dataInicio ? formatarData(formAtividade.dataInicio) : 'Selecionar data'}</Text>
+            <Text style={styles.iconeCalendario}>▦</Text>
+          </Pressable>
+        )}
+
+        <Text style={styles.rotulo}>Data de entrega</Text>
+        {Platform.OS === 'web' ? (
+          React.createElement('input', {
+            type: 'date',
+            value: formAtividade.dataEntrega,
+            min: formAtividade.dataInicio || undefined,
+            onChange: (event) => atualizarCampoAtividade('dataEntrega', event.target.value),
+            'aria-label': 'Data de entrega',
+            style: estilosCampoDataWeb,
+          })
+        ) : (
+          <Pressable style={styles.campoData} onPress={() => abrirCalendario('dataEntrega')}>
+            <Text style={styles.textoCampoData}>{formAtividade.dataEntrega ? formatarData(formAtividade.dataEntrega) : 'Selecionar data'}</Text>
+            <Text style={styles.iconeCalendario}>▦</Text>
+          </Pressable>
+        )}
+
+        {Platform.OS !== 'web' && campoDataAberto && (
+          <DateTimePicker
+            value={converterDataParaDate(formAtividade[campoDataAberto])}
+            mode="date"
+            display="default"
+            onChange={alterarData}
+            minimumDate={campoDataAberto === 'dataEntrega' ? converterDataParaDate(formAtividade.dataInicio) : undefined}
+            locale="pt-BR"
+          />
+        )}
+        <Text style={styles.rotulo}>Status</Text>
+        <View style={styles.listaMaterias}>
+          {['Pendente', 'Em andamento', 'Concluída'].map((status) => (
+            <Pressable key={status} onPress={() => atualizarCampoAtividade('status', status)} style={[styles.opcaoMateria, formAtividade.status === status && styles.opcaoSelecionada]}>
+              <Text style={[styles.textoMateria, formAtividade.status === status && styles.textoSelecionado]}>{status}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <Botao titulo={editandoId ? 'Salvar alterações' : 'Cadastrar atividade'} onPress={salvarAtividade} />
+        {editandoId && <Botao titulo="Cancelar edição" secundario onPress={limparFormularioAtividade} />}
+
+        <View style={styles.separadorAtividades} />
+        <Text style={styles.tituloSecao}>Minhas atividades</Text>
+        <View style={styles.resumoTarefas}>
+          <Text style={styles.textoResumo}>{atividadesPendentes} pendentes/em andamento</Text>
+          <Text style={styles.textoResumo}>{atividadesConcluidas} concluídas</Text>
+        </View>
+
+        <Text style={styles.rotuloFiltro}>Filtrar por status</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtrosCategorias}>
+          {['Todos', 'Pendente', 'Em andamento', 'Concluída'].map((status) => (
+            <Pressable key={status} onPress={() => setFiltroStatus(status)} style={[styles.filtroCategoria, filtroStatus === status && styles.filtroSelecionado]}>
+              <Text style={[styles.textoFiltro, filtroStatus === status && styles.textoFiltroSelecionado]}>{status}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+
+        <Text style={styles.rotuloFiltro}>Filtrar por tipo</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtrosCategorias}>
+          <Pressable onPress={() => setFiltroCategoria('Todas')} style={[styles.filtroCategoria, filtroCategoria === 'Todas' && styles.filtroSelecionado]}>
+            <Text style={[styles.textoFiltro, filtroCategoria === 'Todas' && styles.textoFiltroSelecionado]}>Todas</Text>
+          </Pressable>
+          {categorias.map((categoria) => (
+            <Pressable key={categoria} onPress={() => setFiltroCategoria(categoria)} style={[styles.filtroCategoria, filtroCategoria === categoria && styles.filtroSelecionado]}>
+              <Text style={[styles.textoFiltro, filtroCategoria === categoria && styles.textoFiltroSelecionado]}>{categoria}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+
+        {atividadesFiltradas.length === 0 ? (
+          <Text style={styles.vazio}>{atividades.length === 0 ? 'Nenhuma atividade cadastrada ainda.' : 'Nenhuma atividade encontrada com esses filtros.'}</Text>
+        ) : (
+          atividadesFiltradas.map((item, indice) => (
+            <View key={item.id} style={styles.cartaoAtividade}>
+              {indice === 0 && item.status !== 'Concluída' && (
+                <Text style={styles.rotuloProximaEntrega}>ENTREGA MAIS PRÓXIMA</Text>
+              )}
+              <View style={styles.cabecalhoAtividade}>
+                <View style={styles.infoAtividade}>
+                  <Text style={styles.nomeAtividade}>{item.nome}</Text>
+                  <Text style={styles.detalheAtividade}>{item.categoria} • {item.materia}</Text>
+                  <Text style={styles.detalheAtividade}>Professor(a): {item.professor}</Text>
                 </View>
-
-                <Text
-                  style={[
-                    styles.textoTarefa,
-                    tarefa.concluida && styles.tarefaConcluida,
-                  ]}
-                >
-                  {tarefa.titulo}
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => excluirTarefa(tarefa.id)}
-                style={styles.botaoExcluir}
-              >
-                <Text style={styles.textoExcluir}>Excluir</Text>
-              </Pressable>
+              </View>
+              {item.descricao ? <Text style={styles.descricaoAtividade}>{item.descricao}</Text> : null}
+              <View style={styles.linhaStatusPrazo}>
+                <View style={[styles.statusAtividade, item.status === 'Concluída' && styles.statusConcluida, item.status === 'Pendente' && styles.statusPendente]}>
+                  <Text style={[styles.textoStatusAtividade, item.status === 'Concluída' && styles.textoStatusConcluida, item.status === 'Pendente' && styles.textoStatusPendente]}>{item.status}</Text>
+                </View>
+                <Text style={styles.prazoAtividade}>Entrega: {formatarData(item.dataEntrega)}</Text>
+              </View>
+              <Text style={styles.detalheAtividade}>Início: {formatarData(item.dataInicio)}</Text>
+              <View style={styles.listaStatusAtividade}>
+                {['Pendente', 'Em andamento', 'Concluída'].map((status) => (
+                  <Pressable key={status} onPress={() => alterarStatus(item.id, status)} style={[styles.opcaoMateria, item.status === status && styles.opcaoSelecionada]}>
+                    <Text style={[styles.textoMateria, item.status === status && styles.textoSelecionado]}>{status}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <View style={styles.acoesAtividade}>
+                <Pressable onPress={() => editarAtividade(item)} style={styles.botaoAcaoAtividade}><Text style={styles.textoAcaoAtividade}>Editar</Text></Pressable>
+                <Pressable onPress={() => excluirAtividade(item.id)} style={styles.botaoAcaoAtividade}><Text style={styles.textoExcluir}>Excluir</Text></Pressable>
+              </View>
             </View>
           ))
         )}
@@ -643,6 +839,20 @@ export default function Estudo() {
   );
 }
 
+const estilosCampoDataWeb = {
+  width: '100%',
+  boxSizing: 'border-box',
+  minHeight: '46px',
+  padding: '10px 13px',
+  marginBottom: '13px',
+  border: `1px solid ${CORES.borda}`,
+  borderRadius: '11px',
+  backgroundColor: '#FFFFFF',
+  color: CORES.texto,
+  fontSize: '14px',
+  fontFamily: 'Arial, sans-serif',
+};
+
 const styles = StyleSheet.create({
   tela: {
     flex: 1,
@@ -692,7 +902,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   rotuloClaro: {
-    color: '#F0FFF7',
+    color: '#EAF5EF',
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1,
@@ -710,7 +920,7 @@ const styles = StyleSheet.create({
   },
   barraFundo: {
     height: 9,
-    backgroundColor: '#A9D7BE',
+    backgroundColor: '#A8D5BF',
     borderRadius: 8,
     overflow: 'hidden',
     marginTop: 17,
@@ -1009,6 +1219,187 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginTop: 4,
   },
+  linhaCategoria: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  campoData: {
+    minHeight: 48,
+    borderWidth: 1,
+    borderColor: CORES.borda,
+    borderRadius: 11,
+    paddingHorizontal: 13,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    marginBottom: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  textoCampoData: {
+    color: CORES.texto,
+    fontSize: 14,
+  },
+  iconeCalendario: {
+    color: CORES.principal,
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  inputCategoria: {
+    flex: 1,
+    marginBottom: 13,
+  },
+  botaoAdicionarCategoria: {
+    backgroundColor: CORES.principal,
+    borderRadius: 11,
+    paddingHorizontal: 13,
+    paddingVertical: 14,
+    marginBottom: 13,
+  },
+  textoBotaoAdicionarCategoria: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  tituloFormulario: {
+    color: CORES.texto,
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: 14,
+    marginBottom: 5,
+  },
+  inputMultilinha: {
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  separadorAtividades: {
+    height: 1,
+    backgroundColor: CORES.borda,
+    marginVertical: 20,
+  },
+  rotuloFiltro: {
+    color: CORES.texto,
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 8,
+    marginBottom: 2,
+  },
+  rotuloProximaEntrega: {
+    color: CORES.secundario,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginBottom: 7,
+  },
+  linhaStatusPrazo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 10,
+  },
+  statusAtividade: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FCEBDD',
+    borderRadius: 20,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+  },
+  statusConcluida: {
+    backgroundColor: CORES.principalClaro,
+  },
+  statusPendente: {
+    backgroundColor: '#ECEEF2',
+  },
+  textoStatusAtividade: {
+    color: '#B65B20',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  textoStatusConcluida: {
+    color: CORES.principal,
+  },
+  textoStatusPendente: {
+    color: CORES.secundario,
+  },
+  listaStatusAtividade: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 10,
+  },
+  filtrosCategorias: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 4,
+    marginBottom: 10,
+  },
+  filtroCategoria: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 20,
+    backgroundColor: CORES.fundo,
+  },
+  cartaoAtividade: {
+    borderTopWidth: 1,
+    borderTopColor: CORES.borda,
+    paddingVertical: 15,
+  },
+  cabecalhoAtividade: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 7,
+  },
+  infoAtividade: {
+    flex: 1,
+  },
+  nomeAtividade: {
+    color: CORES.texto,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  prazoAtividade: {
+    color: CORES.principal,
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  detalheAtividade: {
+    color: CORES.secundario,
+    fontSize: 12,
+    marginTop: 4,
+  },
+  descricaoAtividade: {
+    color: CORES.texto,
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 8,
+  },
+  rotuloStatus: {
+    color: CORES.texto,
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 12,
+    marginBottom: 7,
+  },
+  acoesAtividade: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 16,
+    marginTop: 5,
+  },
+  botaoAcaoAtividade: {
+    paddingVertical: 7,
+    paddingHorizontal: 5,
+  },
+  textoAcaoAtividade: {
+    color: CORES.principal,
+    fontSize: 12,
+    fontWeight: '700',
+  },
   rodape: {
     paddingVertical: 18,
     alignItems: 'center',
@@ -1020,16 +1411,6 @@ const styles = StyleSheet.create({
   },
 });
 
-// import { Text, View } from 'react-native';
-
-
-// export default function Estudo() {
-//     return (
-//         <View>
-//             <Text>Tela de estudo</Text>
-//         </View>
-//     );
-// }
 // import { Text, View } from 'react-native';
 
 
