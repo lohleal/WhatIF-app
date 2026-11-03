@@ -37,10 +37,10 @@ export default function Login() {
         Math.min(32, width * 0.07)
     );
 
-  const titleSize = Math.max(
-    25,
-    Math.min(25, width * 0.075)
-);
+    const titleSize = Math.max(
+        25,
+        Math.min(25, width * 0.075)
+    );
 
     async function handleLogin() {
         try {
@@ -96,14 +96,19 @@ export default function Login() {
                                     resizeMode="contain"
                                 />
 
-                                <Text style={styles.appName}>
-                                    WHATIF APP
-                                </Text>
+                                <View style={styles.headerDivider} />
 
-                                <Text style={styles.subtitle}>
-                                    Saúde mental e{'\n'}
-                                    bem-estar estudantil
-                                </Text>
+                                <View style={styles.headerText}>
+                                    <Text style={styles.appName}>
+                                        WHATIF APP
+                                    </Text>
+
+                                    <Text style={styles.subtitle}>
+                                        Saúde mental e
+                                        {'\n'}
+                                        bem-estar estudantil
+                                    </Text>
+                                </View>
                             </View>
 
                             <View
@@ -207,7 +212,9 @@ export default function Login() {
                                         router.push('/cadastro')
                                     }
                                 >
+                                    
                                     <Text
+                                    
                                         style={
                                             styles.createAccountText
                                         }
@@ -274,7 +281,7 @@ const styles = StyleSheet.create({
 
     content: {
         flexGrow: 1,
-        paddingTop: 18,
+        paddingTop: 30,
         paddingBottom: 16,
         justifyContent: 'space-between',
         backgroundColor: 'transparent',
@@ -285,17 +292,29 @@ const styles = StyleSheet.create({
     },
 
     header: {
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
+        gap: 14,
+    },
+
+    headerDivider: {
+        width: 1.5,
+        height: 55,
+        backgroundColor: COLORS.primary,
+    },
+
+    headerText: {
+        justifyContent: 'center',
     },
 
     logo: {
-        width: 80,
-        height: 80,
-        marginBottom: 8,
+        width: 65,
+        height: 65,
     },
 
     appName: {
-        fontSize: 20,
+        fontSize: 21,
         fontWeight: '700',
         color: COLORS.primary,
     },
@@ -303,25 +322,27 @@ const styles = StyleSheet.create({
     subtitle: {
         marginTop: 4,
         fontSize: 12,
-        lineHeight: 17,
-        textAlign: 'center',
+        lineHeight: 16,
+        textAlign: 'left',
         color: COLORS.text,
     },
 
     welcome: {
-        marginTop: 45,
+        marginTop: 50,
         alignItems: 'center',
     },
 
     welcomeCompact: {
-        marginTop: 25,
+        marginTop: 40,
     },
 
     title: {
-        fontWeight: '700',
-        textAlign: 'center',
-        color: COLORS.text,
-    },
+    fontSize: 25,
+    fontWeight: '700',
+    fontFamily: 'sans-serif',
+    textAlign: 'center',
+    color: COLORS.text,
+},
 
     description: {
         marginTop: 10,
@@ -359,7 +380,7 @@ const styles = StyleSheet.create({
     separator: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: 16,
+        marginVertical: 5,
     },
 
     line: {
@@ -374,7 +395,9 @@ const styles = StyleSheet.create({
     },
 
     createAccountButton: {
-        minHeight: 56,
+        minHeight: 55,
+        width: '88%',
+        alignSelf: 'center',
         borderRadius: 28,
         borderWidth: 1.5,
         borderColor: COLORS.primary,
