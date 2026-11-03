@@ -1,0 +1,25 @@
+
+.admin-container {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-background);
+}
+
+.admin-main {
+  flex: 1;
+  min-width: 0;
+  padding: 28px 36px;
+  overflow-x: hidden;
+}
+
+.admin-content {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+@media (max-width: 760px) {
+  .admin-main {
+    padding: 22px 16px;
+  }
+}

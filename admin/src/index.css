@@ -1,0 +1,67 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Tipografia */
+  font-family: 'Inter', sans-serif;
+  color: #263B34;
+  background: #F2F9F6;
+
+  /* Identidade visual */
+  --color-primary: #438F69;
+  --color-primary-light: #8BC7AA;
+  --color-primary-dark: #326F50;
+
+  /* Tons de verde pastel */
+  --color-sidebar: #B9DDCA;
+  --color-green-light: #E5F3EB;
+  --color-green-soft: #F0F7F3;
+
+  /* Fundos */
+  --color-background: #F2F9F6;
+  --color-surface: #FFFFFF;
+
+  /* Textos */
+  --color-text: #263B34;
+  --color-muted: #7B8C83;
+
+  /* Bordas e sombras */
+  --color-border: #E4EDE7;
+  --color-shadow: rgba(48, 91, 68, 0.08);
+}
+
+/* Configurações gerais */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+/* Elementos de formulário */
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Links */
+a {
+  color: inherit;
+  text-decoration: none;
+}
