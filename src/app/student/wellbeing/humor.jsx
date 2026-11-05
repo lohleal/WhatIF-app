@@ -1,9 +1,11 @@
 
-import { useState } from 'react';
+import React, { useState } from 'react';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import {
     Alert,
     Pressable,
     ScrollView,
+    Platform,
     StyleSheet,
     Text,
     TextInput,
@@ -13,26 +15,67 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const COLORS = {
-    primary: '#2F8F46',
+    primary: '#F09F53',
     text: '#26352A',
-    secondary: '#758075',
-    background: '#F8FAF5',
+    secondary: '#8A8175',
+    background: '#FFFAE9',
     white: '#FFFFFF',
-    border: '#E8EDE3',
+    border: '#EED99E',
 };
 
 const MOODS = [
-    { label: 'Muito mal', emoji: '😞', color: '#FCE8E6' },
-    { label: 'Mal', emoji: '😕', color: '#FFF0DF' },
-    { label: 'Mais ou menos', emoji: '😐', color: '#FFF5D9' },
-    { label: 'Bem', emoji: '🙂', color: '#E5F3E4' },
-    { label: 'Muito bem', emoji: '😄', color: '#DDF2E5' },
+    { label: 'Muito mal', icon: 'emoticon-sad-outline', color: '#FFF0C2' },
+    { label: 'Mal', icon: 'emoticon-confused-outline', color: '#FFF4D6' },
+    { label: 'Mais ou menos', icon: 'emoticon-neutral-outline', color: '#FFEFC0' },
+    { label: 'Bem', icon: 'emoticon-happy-outline', color: '#FFEDB8' },
+    { label: 'Muito bem', icon: 'emoticon-excited-outline', color: '#FFE6A6' },
+
+    { label: 'Calma', icon: 'meditation', color: '#FFF5D9' },
+    { label: 'Feliz', icon: 'heart', color: '#FFEAB3' },
+    { label: 'Energética', icon: 'lightning-bolt', color: '#FFEFC0' },
+    { label: 'Alegre', icon: 'emoticon-happy', color: '#FFEDB8' },
+    { label: 'Mudança de humor', icon: 'drama-masks', color: '#FFF4D6' },
+    { label: 'Irritada', icon: 'emoticon-angry-outline', color: '#F8DFA0' },
+    { label: 'Triste', icon: 'emoticon-cry-outline', color: '#FFF0C2' },
+    { label: 'Ansioso(a)', icon: 'weather-windy', color: '#FFF5D9' },
+    { label: 'Desanimado(a)', icon: 'cloud-outline', color: '#FFF0C2' },
+    { label: 'Culpado(a)', icon: 'alert-circle-outline', color: '#FFF4D6' },
+    { label: 'Pouca energia', icon: 'battery-low', color: '#FFEFC0' },
+    { label: 'Confusão', icon: 'head-question-outline', color: '#FFEDB8' },
+    { label: 'Muito autocrítico(a)', icon: 'account-alert-outline', color: '#FFF0C2' },
 ];
+
 
 export default function Humor() {
     const [selectedMood, setSelectedMood] = useState(null);
     const [note, setNote] = useState('');
     const [history, setHistory] = useState([]);
+    const [dataFiltro, setDataFiltro] = useState('');
+    const [calendarioAberto, setCalendarioAberto] = useState(false);
+
+    function dataLocalISO(data) {
+        const ano = data.getFullYear();
+        const mes = String(data.getMonth() + 1).padStart(2, '0');
+        const dia = String(data.getDate()).padStart(2, '0');
+        return `${ano}-${mes}-${dia}`;
+    }
+
+    function converterDataParaDate(valor) {
+        if (!valor) return new Date();
+        const [ano, mes, dia] = valor.split('-').map(Number);
+        return new Date(ano, mes - 1, dia, 12);
+    }
+
+    function alterarDataCalendario(event, dataSelecionada) {
+        if (event.type === 'set' && dataSelecionada) {
+            setDataFiltro(dataLocalISO(dataSelecionada));
+        }
+        setCalendarioAberto(false);
+    }
+
+    const historicoFiltrado = dataFiltro
+        ? history.filter((entry) => entry.dateKey === dataFiltro)
+        : history;
 
     function saveMood() {
         if (!selectedMood) {
@@ -50,6 +93,7 @@ export default function Humor() {
             mood: selectedMood,
             note: note.trim(),
             date: now.toLocaleDateString('pt-BR'),
+            dateKey: dataLocalISO(now),
             time: now.toLocaleTimeString('pt-BR', {
                 hour: '2-digit',
                 minute: '2-digit',
@@ -77,22 +121,9 @@ export default function Humor() {
                             Reserve um momento para perceber como você se sente.
                         </Text>
                     </View>
-
-                    <View style={styles.headerIcon}>
-                        <MaterialCommunityIcons
-                            name="heart-outline"
-                            size={30}
-                            color={COLORS.primary}
-                        />
-                    </View>
                 </View>
 
                 <View style={styles.mainCard}>
-                    <Text style={styles.sectionTitle}>
-                        Como você está se sentindo hoje?
-                    </Text>
-
-                  
 
                     <View style={styles.moodList}>
                         {MOODS.map((mood) => {
@@ -116,9 +147,11 @@ export default function Humor() {
                                             { backgroundColor: mood.color },
                                         ]}
                                     >
-                                        <Text style={styles.emoji}>
-                                            {mood.emoji}
-                                        </Text>
+                                        <MaterialCommunityIcons
+                                            name={mood.icon}
+                                            size={20}
+                                            color={COLORS.primary}
+                                        />
                                     </View>
 
                                     <Text
@@ -173,9 +206,6 @@ export default function Humor() {
                         </Text>
                     </Pressable>
 
-                    <Text style={styles.privacyNote}>
-                        Seu registro é um momento de autocuidado.
-                    </Text>
                 </View>
 
                 <View style={styles.historyHeader}>
@@ -188,12 +218,60 @@ export default function Humor() {
                         </Text>
                     </View>
 
-                    <MaterialCommunityIcons
-                        name="calendar-month-outline"
-                        size={26}
-                        color={COLORS.primary}
-                    />
+                    <View style={styles.calendarActions}>
+                        {Platform.OS === 'web' ? (
+                            <View style={styles.webDateContainer}>
+                                <MaterialCommunityIcons
+                                    name="calendar-month-outline"
+                                    size={20}
+                                    color={COLORS.primary}
+                                />
+                                {React.createElement('input', {
+                                    type: 'date',
+                                    value: dataFiltro,
+                                    onChange: (event) => setDataFiltro(event.target.value),
+                                    'aria-label': 'Filtrar histórico por data',
+                                    style: {
+                                        border: 'none',
+                                        outline: 'none',
+                                        background: 'transparent',
+                                        color: COLORS.text,
+                                        fontSize: '12px',
+                                        width: '112px',
+                                    },
+                                })}
+                            </View>
+                        ) : (
+                            <Pressable
+                                accessibilityRole="button"
+                                accessibilityLabel="Selecionar data para filtrar o histórico"
+                                onPress={() => setCalendarioAberto(true)}
+                                style={styles.calendarButton}
+                            >
+                                <MaterialCommunityIcons
+                                    name="calendar-month-outline"
+                                    size={23}
+                                    color={COLORS.primary}
+                                />
+                            </Pressable>
+                        )}
+                        {!!dataFiltro && (
+                            <Pressable onPress={() => setDataFiltro('')}>
+                                <Text style={styles.clearDateText}>Limpar</Text>
+                            </Pressable>
+                        )}
+                    </View>
                 </View>
+
+                {Platform.OS !== 'web' && calendarioAberto && (
+                    <DateTimePicker
+                        value={converterDataParaDate(dataFiltro)}
+                        mode="date"
+                        display="default"
+                        onChange={alterarDataCalendario}
+                        locale="pt-BR"
+                    />
+                )}
 
                 {history.length === 0 ? (
                     <View style={styles.emptyCard}>
@@ -212,8 +290,22 @@ export default function Humor() {
                             visualizar os registros nesta área.
                         </Text>
                     </View>
+                ) : historicoFiltrado.length === 0 ? (
+                    <View style={styles.emptyCard}>
+                        <View style={styles.emptyIcon}>
+                            <MaterialCommunityIcons
+                                name="calendar-remove-outline"
+                                size={30}
+                                color={COLORS.primary}
+                            />
+                        </View>
+                        <Text style={styles.emptyTitle}>Nenhum registro nesta data</Text>
+                        <Text style={styles.emptyText}>
+                            Escolha outra data ou limpe o filtro para ver todos os registros.
+                        </Text>
+                    </View>
                 ) : (
-                    history.map((entry) => {
+                    historicoFiltrado.map((entry) => {
                         const mood = MOODS.find(
                             (item) => item.label === entry.mood
                         );
@@ -226,9 +318,11 @@ export default function Humor() {
                                         { backgroundColor: mood.color },
                                     ]}
                                 >
-                                    <Text style={styles.emoji}>
-                                        {mood.emoji}
-                                    </Text>
+                                    <MaterialCommunityIcons
+                                        name={mood.icon}
+                                        size={24}
+                                        color={COLORS.primary}
+                                    />
                                 </View>
 
                                 <View style={styles.historyInfo}>
@@ -306,7 +400,7 @@ const styles = StyleSheet.create({
         width: 54,
         height: 54,
         borderRadius: 18,
-        backgroundColor: '#E8F3E4',
+        backgroundColor: '#FFF5D9',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -330,40 +424,45 @@ const styles = StyleSheet.create({
         marginTop: 5,
     },
     moodList: {
-        gap: 10,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        rowGap: 10,
         marginTop: 20,
         marginBottom: 23,
     },
     moodOption: {
+        width: '48%',
         minHeight: 62,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 11,
+        paddingHorizontal: 8,
         paddingVertical: 8,
-        borderRadius: 16,
+        borderRadius: 14,
         borderWidth: 1,
         borderColor: COLORS.border,
         backgroundColor: COLORS.white,
     },
     moodSelected: {
         borderColor: COLORS.primary,
-        backgroundColor: '#F0F7ED',
+        backgroundColor: '#FFF4D6',
     },
     emojiCircle: {
-        width: 43,
-        height: 43,
-        borderRadius: 15,
+        width: 32,
+        height: 32,
+        borderRadius: 11,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 12,
+        marginRight: 6,
     },
     emoji: {
-        fontSize: 24,
+        fontSize: 20,
     },
     moodLabel: {
         flex: 1,
+        flexShrink: 1,
         color: COLORS.text,
-        fontSize: 14,
+        fontSize: 11,
         fontWeight: '600',
     },
     selectedLabel: {
@@ -397,7 +496,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         borderWidth: 1,
         borderColor: COLORS.border,
-        backgroundColor: '#FBFCF9',
+        backgroundColor: '#FFFCF3',
         padding: 13,
         fontSize: 14,
         color: COLORS.text,
@@ -426,6 +525,33 @@ const styles = StyleSheet.create({
         fontSize: 11,
         marginTop: 13,
     },
+    calendarActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    calendarButton: {
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: '#FFF0C2',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    webDateContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        paddingHorizontal: 8,
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: '#FFF0C2',
+    },
+    clearDateText: {
+        color: COLORS.primary,
+        fontSize: 12,
+        fontWeight: '700',
+    },
     historyHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -444,7 +570,7 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 19,
-        backgroundColor: '#E8F3E4',
+        backgroundColor: '#FFF5D9',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 12,
@@ -511,13 +637,3 @@ const styles = StyleSheet.create({
         fontSize: 12,
     },
 });
-
-// import { Text, View } from 'react-native';
-
-// export default function Humor() {
-//     return (
-//         <View>
-//             <Text>Tela de humor</Text>
-//         </View>
-//     );
-// }
