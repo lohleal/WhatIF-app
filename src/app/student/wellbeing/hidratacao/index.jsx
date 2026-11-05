@@ -24,8 +24,8 @@ export default function Hidratacao() {
     );
 
     const heroHeight = compactScreen
-        ? height * 0.39
-        : height * 0.41;
+        ? height * 0.43
+        : height * 0.45;
 
     const waterCircleSize = compactScreen
         ? 125
@@ -241,7 +241,7 @@ export default function Hidratacao() {
                                         styles.cardTitle
                                     }
                                 >
-                                    Histórico semanal
+                                    Histórico 
                                 </Text>
 
                                 <MaterialCommunityIcons

@@ -1,3 +1,4 @@
+
 import {
     ImageBackground,
     Pressable,
@@ -29,14 +30,14 @@ export default function BemEstar() {
     const contentWidth = width - horizontalPadding * 2;
     const cardWidth = contentWidth * 0.48;
 
-    const cardHeight = compactScreen ? 178 : 205;
+    const cardHeight = compactScreen ? 208 : 225;
 
     return (
         <ImageBackground
-                source={require('../../../../assets/images/indicators-background.png')}
-                resizeMode="cover"
-                style={styles.background}
-            >
+            source={require('../../../../assets/images/indicators-background.png')}
+            resizeMode="cover"
+            style={styles.background}
+        >
             <SafeAreaView style={styles.safeArea}>
                 <View
                     style={[
@@ -46,7 +47,7 @@ export default function BemEstar() {
                         },
                     ]}
                 >
-                    {/* topo */}
+                    {/* TOPO */}
                     <View style={styles.notificationRow}>
                         <Pressable style={styles.notificationButton}>
                             <MaterialCommunityIcons
@@ -57,7 +58,7 @@ export default function BemEstar() {
                         </Pressable>
                     </View>
 
-                    {/* card de mensagem */}
+                    {/* CARD DE MENSAGEM */}
                     <View style={styles.welcomeCard}>
                         <View style={styles.faceCircle}>
                             <MaterialCommunityIcons
@@ -69,7 +70,7 @@ export default function BemEstar() {
 
                         <View style={styles.welcomeText}>
                             <Text style={styles.welcomeTitle}>
-                                Como você está{'\n'}
+                                Como você está{' \n'}
                                 se sentindo hoje?
                             </Text>
 
@@ -79,16 +80,19 @@ export default function BemEstar() {
                         </View>
                     </View>
 
-                    {/* grade */}
+                    {/* GRADE DOS CARDS */}
                     <View style={styles.grid}>
+
+                        {/* ÁGUA */}
                         <WellbeingCard
                             width={cardWidth}
                             height={cardHeight}
                             title="Água"
-                            subtitle="4 de 8 copos"
+                            subtitle="1,5L/2L"
                             iconName="water"
                             iconColor="#48A9B6"
-                            backgroundColor="#EEF8FC"
+                            backgroundColor="#EAF7FC"
+                            waveColor="#B8EAF5"
                             onPress={() =>
                                 router.push('/student/wellbeing/hidratacao')
                             }
@@ -96,12 +100,13 @@ export default function BemEstar() {
                             <View style={styles.waterCircle}>
                                 <MaterialCommunityIcons
                                     name="water-outline"
-                                    size={52}
+                                    size={60}
                                     color="#69C6D2"
                                 />
                             </View>
                         </WellbeingCard>
 
+                        {/* SONO */}
                         <WellbeingCard
                             width={cardWidth}
                             height={cardHeight}
@@ -110,41 +115,49 @@ export default function BemEstar() {
                             iconName="moon-waning-crescent"
                             iconColor="#7155A5"
                             backgroundColor="#F6F0FC"
+                            waveColor="#DCCCF2"
                             onPress={() =>
                                 router.push('/student/wellbeing/sono')
                             }
                         >
                             <MaterialCommunityIcons
                                 name="weather-night"
-                                size={72}
+                                size={80}
                                 color="#A997C7"
                             />
-                            <Text style={styles.sleepStatus}>Bom</Text>
+
+                            <Text style={styles.sleepStatus}>
+                                Bom
+                            </Text>
                         </WellbeingCard>
 
+                        {/* HUMOR */}
                         <WellbeingCard
                             width={cardWidth}
                             height={cardHeight}
                             title="Humor"
-                            subtitle="Feliz"
+                            subtitle="Ansioso"
                             iconName="emoticon-happy-outline"
                             iconColor="#E6A63A"
-                            backgroundColor="#FFF7EA"
+                            backgroundColor="#FFF5E8"
+                            waveColor="#FFE0C3"
                             onPress={() =>
                                 router.push('/student/wellbeing/humor')
                             }
                         >
                             <View style={styles.moodBars}>
-                                <View style={[styles.moodBar, { height: 28 }]} />
+                                <View style={[styles.moodBar, { height: 40 }]} />
+                                <View style={[styles.moodBar, { height: 65 }]} />
                                 <View style={[styles.moodBar, { height: 48 }]} />
-                                <View style={[styles.moodBar, { height: 34 }]} />
+
                                 <View
                                     style={[
                                         styles.moodBarActive,
-                                        { height: 62 },
+                                        { height: 78 },
                                     ]}
                                 />
-                                <View style={[styles.moodBar, { height: 28 }]} />
+
+                                <View style={[styles.moodBar, { height: 40 }]} />
                             </View>
 
                             <View style={styles.emojis}>
@@ -154,25 +167,29 @@ export default function BemEstar() {
                             </View>
                         </WellbeingCard>
 
+                        {/* ESTUDO */}
                         <WellbeingCard
                             width={cardWidth}
                             height={cardHeight}
                             title="Estudo"
-                            //subtitle={'Seu estudo geral\nde hoje.'}
                             iconName="book-open-page-variant-outline"
                             iconColor="#7DA55C"
-                            backgroundColor="#F2F8EC"
+                            backgroundColor="#F0F7E9"
+                             waveColor="#CDE9C2"
                             onPress={() =>
                                 router.push('/student/wellbeing/estudo')
                             }
                         >
                             <View style={styles.studyCircle}>
-                                <Text style={styles.studyTime}>1h</Text>
+                                <Text style={styles.studyTime}>
+                                    1h
+                                </Text>
                             </View>
                         </WellbeingCard>
+
                     </View>
 
-                    {/* card final */}
+                    {/* CARD FINAL */}
                     <View style={styles.footerCard}>
                         <MaterialCommunityIcons
                             name="sprout-outline"
@@ -194,8 +211,8 @@ export default function BemEstar() {
                         />
                     </View>
                 </View>
-                </SafeAreaView>
-            </ImageBackground >
+            </SafeAreaView>
+        </ImageBackground>
     );
 }
 
@@ -230,14 +247,14 @@ const styles = StyleSheet.create({
     },
 
     welcomeCard: {
-        minHeight: 88,
+        minHeight: 80,
         borderRadius: 20,
         paddingHorizontal: 14,
         paddingVertical: 10,
         backgroundColor: '#F3F7ED',
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 10,
+        marginBottom: 15,
     },
 
     faceCircle: {
@@ -255,7 +272,7 @@ const styles = StyleSheet.create({
     },
 
     welcomeTitle: {
-        fontSize: 18,
+        fontSize: 20,
         lineHeight: 22,
         fontWeight: '700',
         color: COLORS.primary,
@@ -263,7 +280,7 @@ const styles = StyleSheet.create({
 
     welcomeSubtitle: {
         marginTop: 3,
-        fontSize: 12,
+        fontSize: 13,
         color: COLORS.textSecondary,
     },
 
@@ -271,60 +288,70 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        rowGap: 12,
+        rowGap: 15,
     },
 
+    // ÁGUA
     waterCircle: {
-        width: 108,
-        height: 108,
-        borderRadius: 54,
+        width: 100,
+        height: 100,
+        borderRadius: 60,
         borderWidth: 10,
         borderColor: '#A9E7EE',
         alignItems: 'center',
         justifyContent: 'center',
     },
 
+    // SONO
     sleepStatus: {
-        marginTop: 8,
-        color: COLORS.primary,
-        fontSize: 16,
-        fontWeight: '500',
+        marginTop: 5,
+        paddingHorizontal: 25,
+        paddingVertical: 5,
+        overflow: 'hidden',
+        borderRadius: 20,
+        backgroundColor: '#E4EEDB',
+        color: '#28643C',
+        fontSize: 15,
+        fontWeight: '800',
+        textAlign: 'center',
     },
 
+    // HUMOR
     moodBars: {
-        height: 65,
+        height: 75,
         flexDirection: 'row',
         alignItems: 'flex-end',
-        gap: 8,
+        gap: 10,
     },
 
     moodBar: {
         width: 10,
-        borderRadius: 6,
+        borderRadius: 8,
         backgroundColor: '#FFDDBE',
     },
 
     moodBarActive: {
-        width: 10,
-        borderRadius: 6,
+        width: 12,
+        borderRadius: 8,
         backgroundColor: '#FF9B67',
     },
 
     emojis: {
         width: '100%',
-        marginTop: 10,
+        marginTop: 6,
         flexDirection: 'row',
         justifyContent: 'space-around',
     },
 
     emoji: {
-        fontSize: 22,
+        fontSize: 23,
     },
 
+    // ESTUDO
     studyCircle: {
-        width: 108,
-        height: 108,
-        borderRadius: 54,
+        width: 100,
+        height: 100,
+        borderRadius: 60,
         borderWidth: 10,
         borderColor: '#A7C881',
         alignItems: 'center',
@@ -332,11 +359,12 @@ const styles = StyleSheet.create({
     },
 
     studyTime: {
-        fontSize: 30,
-        fontWeight: '700',
-        color: COLORS.primary,
+        fontSize: 34,
+        fontWeight: '800',
+        color: '#287C46',
     },
 
+    // CARD FINAL
     footerCard: {
         minHeight: 70,
         maxHeight: 74,

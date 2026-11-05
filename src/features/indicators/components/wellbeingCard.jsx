@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import CardWave from './cardWave';
 
 export default function WellbeingCard({
     title,
@@ -13,6 +14,7 @@ export default function WellbeingCard({
     iconName,
     iconColor,
     backgroundColor,
+    waveColor,
     width,
     height,
     onPress,
@@ -27,14 +29,18 @@ export default function WellbeingCard({
                     width,
                     height,
                     backgroundColor,
-                    opacity: pressed ? 0.8 : 1,
+                    opacity: pressed ? 0.9 : 1,
                 },
             ]}
         >
+            {/* Onda no fundo do card */}
+            <CardWave color={waveColor || backgroundColor} />
+
+            {/* Cabeçalho */}
             <View style={styles.header}>
                 <MaterialCommunityIcons
                     name={iconName}
-                    size={30}
+                    size={34}
                     color={iconColor}
                 />
 
@@ -43,12 +49,15 @@ export default function WellbeingCard({
                         {title}
                     </Text>
 
-                    <Text style={styles.subtitle}>
-                        {subtitle}
-                    </Text>
+                    {subtitle ? (
+                        <Text style={styles.subtitle}>
+                            {subtitle}
+                        </Text>
+                    ) : null}
                 </View>
             </View>
 
+            {/* Conteúdo */}
             <View style={styles.content}>
                 {children}
             </View>
@@ -58,23 +67,28 @@ export default function WellbeingCard({
 
 const styles = StyleSheet.create({
     card: {
-        borderRadius: 22,
-        padding: 18,
+        borderRadius: 27,
+        padding: 17,
+        borderWidth: 2,
+        borderColor: '#FFFFFF',
+        overflow: 'hidden',
+        position: 'relative',
 
-        shadowColor: '#000',
+        shadowColor: '#000000',
         shadowOffset: {
             width: 0,
-            height: 2,
+            height: 3,
         },
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        elevation: 2,
+        shadowOpacity: 0.10,
+        shadowRadius: 6,
+        elevation: 4,
     },
 
     header: {
         flexDirection: 'row',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         gap: 10,
+        zIndex: 1,
     },
 
     headerText: {
@@ -82,15 +96,15 @@ const styles = StyleSheet.create({
     },
 
     title: {
-        fontSize: 20,
-        fontWeight: '700',
+        fontSize: 22,
+        fontWeight: '800',
         color: '#222222',
     },
 
     subtitle: {
-        marginTop: 4,
-        fontSize: 14,
-        lineHeight: 20,
+        marginTop: 3,
+        fontSize: 15,
+        lineHeight: 21,
         color: '#777777',
     },
 
@@ -98,5 +112,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        paddingTop: 5,
+        zIndex: 1,
     },
 });

@@ -4,12 +4,13 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
     Pressable,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,
     View,
 } from 'react-native';
+
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const BLUE = '#75BDF8';
 const DARK_BLUE = '#174675';
@@ -236,7 +237,7 @@ export default function ProgressoAgua() {
                                 </View>
 
                                 <Text style={styles.goalLabel}>
-                                    Meta diária
+                                    Objetivo diário
                                 </Text>
 
                                 <Text style={styles.goalValue}>
@@ -290,11 +291,11 @@ export default function ProgressoAgua() {
 
                             <View style={styles.periodProgressRow}>
                                 <Text style={styles.percent}>
-                                    {porcentagem}% da meta do período
+                                    {porcentagem}% do objetivo do período
                                 </Text>
 
                                 <Text style={styles.periodGoal}>
-                                    Meta: {formatarLitros(metaPeriodo)} L
+                                    Objetivo: {formatarLitros(metaPeriodo)} L
                                 </Text>
                             </View>
                         </View>
@@ -447,7 +448,7 @@ export default function ProgressoAgua() {
                 {/* COMPARAÇÃO */}
                 <View style={styles.sectionHeadingOutside}>
                     <Text style={styles.sectionTitle}>
-                        Comparação com sua meta
+                        Comparação com seu objetivo
                     </Text>
                 </View>
 
@@ -470,7 +471,7 @@ export default function ProgressoAgua() {
                         </Text>
 
                         <Text style={styles.comparisonPercent}>
-                            {porcentagem}% da meta
+                            {porcentagem}% do objetivo
                         </Text>
 
                         <View style={styles.track}>
@@ -493,7 +494,7 @@ export default function ProgressoAgua() {
                         </View>
 
                         <Text style={styles.comparisonLabel}>
-                            Meta do período
+                            Objetivo do período
                         </Text>
 
                         <Text style={styles.comparisonValue}>
@@ -527,12 +528,12 @@ export default function ProgressoAgua() {
                         </View>
 
                         <Text style={styles.goalButtonsTitle}>
-                            Ajustar meta diária
+                            Ajustar objetivo diário
                         </Text>
                     </View>
 
                     <Text style={styles.goalDescription}>
-                        Escolha sua meta diária de consumo de água.
+                        Escolha seu objetivo diário de consumo de água.
                     </Text>
 
                     <View style={styles.goalOptions}>
@@ -571,10 +572,10 @@ const styles = StyleSheet.create({
     },
 
     content: {
-        paddingHorizontal: 22,
-        paddingTop: 12,
-        paddingBottom: 30,
-    },
+    paddingHorizontal: 22,
+    paddingTop: 12,
+    paddingBottom: 30,
+},
 
     header: {
         flexDirection: 'row',
