@@ -24,24 +24,24 @@ const COLORS = {
 };
 
 const MOODS = [
-    { label: 'Muito mal', icon: 'emoticon-sad-outline', color: '#FFF0C2' },
-    { label: 'Mal', icon: 'emoticon-confused-outline', color: '#FFF4D6' },
-    { label: 'Mais ou menos', icon: 'emoticon-neutral-outline', color: '#FFEFC0' },
     { label: 'Bem', icon: 'emoticon-happy-outline', color: '#FFEDB8' },
     { label: 'Muito bem', icon: 'emoticon-excited-outline', color: '#FFE6A6' },
-
-    { label: 'Calma', icon: 'meditation', color: '#FFF5D9' },
+    { label: 'Muito mal', icon: 'emoticon-sad-outline', color: '#FFF0C2' },
+    { label: 'Mal', icon: 'emoticon-confused-outline', color: '#FFF4D6' },
+    
+    { label: 'Calmo(a)', icon: 'meditation', color: '#FFF5D9' },
     { label: 'Feliz', icon: 'heart', color: '#FFEAB3' },
-    { label: 'Energética', icon: 'lightning-bolt', color: '#FFEFC0' },
+    { label: 'Energético(a)', icon: 'lightning-bolt', color: '#FFEFC0' },
     { label: 'Alegre', icon: 'emoticon-happy', color: '#FFEDB8' },
     { label: 'Mudança de humor', icon: 'drama-masks', color: '#FFF4D6' },
-    { label: 'Irritada', icon: 'emoticon-angry-outline', color: '#F8DFA0' },
+    { label: 'Apático(a)', icon: 'emoticon-neutral-outline', color: '#FFEFC0' },
+    { label: 'Irritado(a)', icon: 'emoticon-angry-outline', color: '#F8DFA0' },
     { label: 'Triste', icon: 'emoticon-cry-outline', color: '#FFF0C2' },
     { label: 'Ansioso(a)', icon: 'weather-windy', color: '#FFF5D9' },
     { label: 'Desanimado(a)', icon: 'cloud-outline', color: '#FFF0C2' },
     { label: 'Culpado(a)', icon: 'alert-circle-outline', color: '#FFF4D6' },
     { label: 'Pouca energia', icon: 'battery-low', color: '#FFEFC0' },
-    { label: 'Confusão', icon: 'head-question-outline', color: '#FFEDB8' },
+    { label: 'Confuso(a)', icon: 'head-question-outline', color: '#FFEDB8' },
     { label: 'Muito autocrítico(a)', icon: 'account-alert-outline', color: '#FFF0C2' },
 ];
 

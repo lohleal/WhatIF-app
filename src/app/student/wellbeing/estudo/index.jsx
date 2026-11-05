@@ -159,15 +159,14 @@ export default function Estudo() {
               <Text style={styles.progressMainText}>
                 {formatarTempo(minutosHoje)}
               </Text>
-              <Text style={styles.progressSubText}>
-                estudados hoje
-              </Text>
+              
             </View>
           </View>
 
           <Text style={styles.amount}>
             {formatarTempo(minutosHoje)} / {formatarTempo(metaMinutos)}
           </Text>
+          
         </View>
 
         {/* PARTE BRANCA */}
@@ -234,7 +233,7 @@ export default function Estudo() {
 
               <View style={styles.cardText}>
                 <Text style={styles.cardTitle}>
-                  Meta diária
+                  Objetivo diário
                 </Text>
 
                 <Text style={styles.cardSubtitle}>
@@ -351,12 +350,6 @@ export default function Estudo() {
                   </View>
                 </Pressable>
               ))}
-
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>
-                Pequenos passos também fazem parte do progresso.
-              </Text>
-            </View>
           </ScrollView>
         </View>
       </View>

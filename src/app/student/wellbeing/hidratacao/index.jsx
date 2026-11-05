@@ -145,12 +145,12 @@ export default function Hidratacao() {
                         </View>
                     </View>
 
-                    {/* PROGRESSO */}
+                    {/* OBJETIVO */}
 
                     <Pressable
                         onPress={() =>
                             router.push(
-                                '/student/wellbeing/hidratacao/progresso'
+                                '/student/wellbeing/hidratacao/objetivo'
                             )
                         }
                         style={({ pressed }) => [
@@ -181,7 +181,7 @@ export default function Hidratacao() {
                                         styles.cardTitle
                                     }
                                 >
-                                    Progresso do dia
+                                    Objetivo diário
                                 </Text>
 
                                 <MaterialCommunityIcons

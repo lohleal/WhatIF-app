@@ -59,11 +59,12 @@ export default function Sono() {
                         style={[
                             styles.title,
                             compactScreen &&
-                                styles.titleCompact,
+                            styles.titleCompact,
                         ]}
                     >
                         Sono
                     </Text>
+
 
                     {/* PROGRESSO CIRCULAR */}
 
@@ -137,9 +138,7 @@ export default function Sono() {
                         7.5h / 8h
                     </Text>
 
-                    <Text style={styles.quality}>
-                        Qualidade: Boa
-                    </Text>
+
                 </View>
 
                 {/* PARTE BRANCA */}
@@ -155,19 +154,10 @@ export default function Sono() {
                 >
                     {/* HORÁRIO */}
 
-                    <Pressable
-                        onPress={() =>
-                            router.push(
-                                '/student/wellbeing/sono/horario'
-                            )
-                        }
-                        style={({ pressed }) => [
+                    <View
+                        style={[
                             styles.infoCard,
-                            {
-                                height: cardHeight,
-                            },
-                            pressed &&
-                                styles.cardPressed,
+                            { height: cardHeight },
                         ]}
                     >
                         <View
@@ -195,12 +185,6 @@ export default function Sono() {
                                 >
                                     Horário de sono
                                 </Text>
-
-                                <MaterialCommunityIcons
-                                    name="chevron-right"
-                                    size={21}
-                                    color="#AAAAAA"
-                                />
                             </View>
 
                             <Text
@@ -211,14 +195,14 @@ export default function Sono() {
                                 23:00 às 06:30
                             </Text>
                         </View>
-                    </Pressable>
+                    </View>
 
-                    {/* PROGRESSO */}
+                    {/* OBJETIVO */}
 
                     <Pressable
                         onPress={() =>
                             router.push(
-                                '/student/wellbeing/sono/progresso'
+                                '/student/wellbeing/sono/objetivo'
                             )
                         }
                         style={({ pressed }) => [
@@ -227,7 +211,7 @@ export default function Sono() {
                                 height: cardHeight,
                             },
                             pressed &&
-                                styles.cardPressed,
+                            styles.cardPressed,
                         ]}
                     >
                         <View
@@ -253,7 +237,7 @@ export default function Sono() {
                                         styles.cardTitle
                                     }
                                 >
-                                    Progresso da noite
+                                    Objetivo diário
                                 </Text>
 
                                 <MaterialCommunityIcons
@@ -291,7 +275,7 @@ export default function Sono() {
                                 height: cardHeight,
                             },
                             pressed &&
-                                styles.cardPressed,
+                            styles.cardPressed,
                         ]}
                     >
                         <View
@@ -332,9 +316,28 @@ export default function Sono() {
                                     styles.cardSubtitle
                                 }
                             >
-                                Segunda a Domingo
+                                Domingo a Domingo
                             </Text>
+
                         </View>
+
+                    </Pressable>
+                    {/* BOTÃO + */}
+
+                    <Pressable
+                        style={({ pressed }) => [
+                            styles.addButton,
+                            pressed && styles.addButtonPressed,
+                        ]}
+                        onPress={() =>
+                            router.push('/student/wellbeing/sono/registro')
+                        }
+                    >
+                        <MaterialCommunityIcons
+                            name="plus"
+                            size={30}
+                            color="#FFFFFF"
+                        />
                     </Pressable>
                 </View>
             </View>
@@ -394,7 +397,7 @@ const styles = StyleSheet.create({
     },
 
     progressMainText: {
-        fontSize: 42,
+        fontSize: 40,
         fontWeight: '700',
 
         color: '#FFFFFF',
@@ -403,7 +406,7 @@ const styles = StyleSheet.create({
     amount: {
         marginTop: 11,
 
-        fontSize: 22,
+        fontSize: 20,
         fontWeight: '700',
 
         color: '#FFFFFF',
@@ -525,5 +528,34 @@ const styles = StyleSheet.create({
         borderRadius: 8,
 
         backgroundColor: '#CE9DE0',
+    },
+
+    addButton: {
+        position: 'absolute',
+        bottom: 25,
+        right: 22,
+
+        width: 58,
+        height: 58,
+        borderRadius: 29,
+
+        backgroundColor: '#B37BC9',
+
+        alignItems: 'center',
+        justifyContent: 'center',
+
+        elevation: 5,
+        shadowColor: '#000000',
+        shadowOffset: {
+            width: 0,
+            height: 3,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+    },
+
+    addButtonPressed: {
+        opacity: 0.75,
+        transform: [{ scale: 0.95 }],
     },
 });

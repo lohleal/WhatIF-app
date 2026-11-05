@@ -168,8 +168,6 @@ export default function AdicionarRegistroAgua() {
                 quickShortcutMl: atalhoSelecionado,
             });
 
-            Alert.alert('Sucesso!', 'Consumo registrado.');
-
             setQuantidade('200');
             setAtalhoSelecionado(null);
             setHorarioSelecionado(new Date());
@@ -309,10 +307,7 @@ export default function AdicionarRegistroAgua() {
                             <Text style={styles.totalUnit}> ml</Text>
                         </Text>
 
-                        <Text style={styles.totalDescription}>
-                            Água registrada hoje
-                        </Text>
-
+                    
                         <View style={styles.waterIllustration}>
                             <MaterialCommunityIcons
                                 name="cup-water"
@@ -332,10 +327,10 @@ export default function AdicionarRegistroAgua() {
 
                         <View style={styles.progressLabels}>
                             <Text style={styles.progressLabel}>
-                                Seu consumo diário
+                                Água registrada
                             </Text>
                             <Text style={styles.progressGoal}>
-                                Meta: 2.000 ml
+                                Objetivo: 2.000 ml
                             </Text>
                         </View>
 
@@ -359,7 +354,7 @@ export default function AdicionarRegistroAgua() {
                             <View style={styles.headingIcon}>
                                 <Ionicons
                                     name="flash"
-                                    size={25}
+                                    size={20}
                                     color={BLUE}
                                 />
                             </View>
@@ -368,7 +363,7 @@ export default function AdicionarRegistroAgua() {
                                     Registro rápido
                                 </Text>
                                 <Text style={styles.sectionSubtitle}>
-                                    Registre com um toque usando seus volumes preferidos.
+                                    Registre com um toque
                                 </Text>
                             </View>
                         </View>
@@ -455,7 +450,7 @@ export default function AdicionarRegistroAgua() {
                                     Registro manual
                                 </Text>
                                 <Text style={styles.sectionSubtitle}>
-                                    Defina a quantidade e o horário do consumo.
+                                    Defina a quantidade e o horário do consumo
                                 </Text>
                             </View>
                         </View>
@@ -580,7 +575,7 @@ export default function AdicionarRegistroAgua() {
                                     color={MUTED}
                                 />
                                 <Text style={styles.emptyText}>
-                                    Seus registros aparecerão aqui.
+                                    Seus registros aparecerão aqui
                                 </Text>
                             </View>
                         ) : (
@@ -737,7 +732,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     title: {
-        fontSize: 23,
+        fontSize: 22,
         fontWeight: '800',
         color: DARK_BLUE,
         letterSpacing: -0.5,
@@ -767,13 +762,13 @@ const styles = StyleSheet.create({
     },
     cardEyebrow: {
         color: WHITE,
-        fontSize: 15,
+        fontSize: 13,
         fontWeight: '800',
         letterSpacing: 1.2,
     },
     totalNumber: {
         color: WHITE,
-        fontSize: 38,
+        fontSize: 30,
         fontWeight: '800',
         marginTop: 6,
         letterSpacing: -1,
@@ -825,7 +820,7 @@ const styles = StyleSheet.create({
         fontSize: 15,
     },
     section: {
-        marginTop: 24,
+        marginTop: 3,
         marginBottom: 8,
     },
     sectionHeading: {
@@ -846,7 +841,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     sectionTitle: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: '800',
         color: DARK_BLUE,
         letterSpacing: -0.2,

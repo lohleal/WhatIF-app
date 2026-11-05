@@ -142,7 +142,7 @@ export default function ProgressoAgua() {
                             Meu progresso
                         </Text>
                         <Text style={styles.subtitle}>
-                            Acompanhe sua hidratação.
+                            Acompanhe sua hidratação
                         </Text>
                     </View>
 
@@ -513,51 +513,6 @@ export default function ProgressoAgua() {
                                 ]}
                             />
                         </View>
-                    </View>
-                </View>
-
-                {/* AJUSTAR META */}
-                <View style={styles.goalButtons}>
-                    <View style={styles.goalTitleRow}>
-                        <View style={styles.headingIcon}>
-                            <Ionicons
-                                name="options-outline"
-                                size={21}
-                                color={BLUE}
-                            />
-                        </View>
-
-                        <Text style={styles.goalButtonsTitle}>
-                            Ajustar objetivo diário
-                        </Text>
-                    </View>
-
-                    <Text style={styles.goalDescription}>
-                        Escolha seu objetivo diário de consumo de água.
-                    </Text>
-
-                    <View style={styles.goalOptions}>
-                        {[1000, 1500, 2000, 2500, 3000].map((valor) => (
-                            <Pressable
-                                key={valor}
-                                onPress={() => setMeta(valor)}
-                                style={[
-                                    styles.goalButton,
-                                    meta === valor &&
-                                        styles.goalButtonActive,
-                                ]}
-                            >
-                                <Text
-                                    style={[
-                                        styles.goalButtonText,
-                                        meta === valor &&
-                                            styles.goalButtonTextActive,
-                                    ]}
-                                >
-                                    {formatarLitros(valor)} L
-                                </Text>
-                            </Pressable>
-                        ))}
                     </View>
                 </View>
             </ScrollView>

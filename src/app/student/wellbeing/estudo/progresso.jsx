@@ -399,7 +399,7 @@ export default function ProgressoEstudos() {
 
       <View style={styles.rodape}>
         <Text style={styles.rodapeTexto}>
-          Continue acompanhando sua evolução. Cada passo conta! 💚
+          Continue acompanhando sua evolução! 
         </Text>
       </View>
     </ScrollView>
