@@ -1,11 +1,14 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import {
+    Alert,
     ImageBackground,
+    Modal,
     Pressable,
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     useWindowDimensions,
     View,
 } from 'react-native';
@@ -19,6 +22,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS } from '../../../constants/colors.js';
 import IndicatorCard from '../../../features/indicators/components/indicatorCard.jsx';
+import {
+    atualizarIndicador,
+    concluirIndicador,
+    excluirIndicador,
+} from '../../../features/indicators/services/indicatorService.js';
 import useIndicatorsViewModel from '../../../features/indicators/viewmodels/use-indicators-view-model.js';
 import { auth, db } from '../../../services/firebase/firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
@@ -70,6 +78,17 @@ export default function Indicadores() {
 
     const [studentName, setStudentName] = useState('');
 
+    // Estado do modal de detalhes do indicador
+    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedIndicator, setSelectedIndicator] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editName, setEditName] = useState('');
+    const [editDescription, setEditDescription] = useState('');
+    const [editTarget, setEditTarget] = useState('');
+    const [editUnit, setEditUnit] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+
     useEffect(() => {
         async function loadStudentName() {
             const user = auth.currentUser;
@@ -95,13 +114,103 @@ export default function Indicadores() {
         loadStudentName();
     }, [name]);
 
-    function handleIndicatorPress(
-        indicator
-    ) {
-        console.log(
-            'Indicador selecionado:',
-            indicator.id
+    function handleIndicatorPress(indicator) {
+        setSelectedIndicator(indicator);
+        setEditName(indicator.name || '');
+        setEditDescription(indicator.description || '');
+        setEditTarget(
+            indicator.target !== null && indicator.target !== undefined
+                ? String(indicator.target)
+                : ''
         );
+        setEditUnit(indicator.unit || '');
+        setIsEditing(false);
+        setModalVisible(true);
+    }
+
+    function closeIndicatorModal() {
+        setModalVisible(false);
+        setDeleteConfirmVisible(false);
+        setIsEditing(false);
+        setSelectedIndicator(null);
+    }
+
+    async function handleCompleteIndicator() {
+        if (!selectedIndicator) return;
+
+        try {
+            setSaving(true);
+            await concluirIndicador(
+                selectedIndicator.id,
+                selectedIndicator.target
+            );
+            Alert.alert('Muito bem!', 'Indicador concluído com sucesso!');
+            closeIndicatorModal();
+        } catch (error) {
+            console.error('Erro ao concluir indicador:', error);
+            Alert.alert('Erro', 'Não foi possível concluir o indicador.');
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    async function handleSaveEdit() {
+        if (!selectedIndicator) return;
+
+        if (!editName.trim()) {
+            Alert.alert('Atenção', 'Informe o nome do indicador.');
+            return;
+        }
+
+        if (
+            selectedIndicator.type !== 'conclusao' &&
+            (!editTarget.trim() || !Number.isFinite(Number(editTarget)) || Number(editTarget) <= 0)
+        ) {
+            Alert.alert('Atenção', 'Informe uma meta válida.');
+            return;
+        }
+
+        try {
+            setSaving(true);
+            await atualizarIndicador(selectedIndicator.id, {
+                name: editName,
+                description: editDescription,
+                type: selectedIndicator.type,
+                target: editTarget,
+                unit: editUnit,
+            });
+            Alert.alert('Sucesso', 'Indicador atualizado!');
+            setIsEditing(false);
+            setModalVisible(false);
+            setSelectedIndicator(null);
+        } catch (error) {
+            console.error('Erro ao editar indicador:', error);
+            Alert.alert('Erro', 'Não foi possível atualizar o indicador.');
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    function handleDeleteIndicator() {
+        if (!selectedIndicator || saving) return;
+        setDeleteConfirmVisible(true);
+    }
+
+    async function confirmDeleteIndicator() {
+        if (!selectedIndicator || saving) return;
+
+        try {
+            setSaving(true);
+            await excluirIndicador(selectedIndicator.id);
+            setDeleteConfirmVisible(false);
+            closeIndicatorModal();
+        } catch (error) {
+            console.error('Erro ao excluir indicador:', error);
+            setDeleteConfirmVisible(false);
+            // O modal principal continua aberto para não perder o contexto.
+        } finally {
+            setSaving(false);
+        }
     }
 
     function handleCreateIndicator() {
@@ -394,6 +503,220 @@ export default function Indicadores() {
                         color="#FFFFFF"
                     />
                 </Pressable>
+
+                {/* MODAL DE DETALHES DO INDICADOR */}
+                <Modal
+                    visible={modalVisible}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={closeIndicatorModal}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalContainer}>
+                            <ScrollView showsVerticalScrollIndicator={false}>
+                                {selectedIndicator && (
+                                    <>
+                                        <View style={styles.modalHeader}>
+                                            <Text style={styles.modalTitle}>
+                                                {isEditing ? 'Editar indicador' : 'Detalhes do indicador'}
+                                            </Text>
+                                            <Pressable onPress={closeIndicatorModal} hitSlop={10}>
+                                                <MaterialCommunityIcons name="close" size={25} color={COLORS.text} />
+                                            </Pressable>
+                                        </View>
+
+                                        {isEditing ? (
+                                            <>
+                                                <Text style={styles.fieldLabel}>Nome</Text>
+                                                <TextInput
+                                                    style={styles.modalInput}
+                                                    value={editName}
+                                                    onChangeText={setEditName}
+                                                    placeholder="Nome do indicador"
+                                                    placeholderTextColor="#999999"
+                                                />
+
+                                                <Text style={styles.fieldLabel}>Descrição</Text>
+                                                <TextInput
+                                                    style={[styles.modalInput, styles.descriptionInput]}
+                                                    value={editDescription}
+                                                    onChangeText={setEditDescription}
+                                                    placeholder="Descreva seu objetivo"
+                                                    placeholderTextColor="#999999"
+                                                    multiline
+                                                />
+
+                                                {selectedIndicator.type !== 'conclusao' && (
+                                                    <>
+                                                        <Text style={styles.fieldLabel}>Meta</Text>
+                                                        <View style={styles.targetRow}>
+                                                            <TextInput
+                                                                style={[styles.modalInput, styles.targetInput]}
+                                                                value={editTarget}
+                                                                onChangeText={setEditTarget}
+                                                                keyboardType="numeric"
+                                                                placeholder="Ex.: 2"
+                                                                placeholderTextColor="#999999"
+                                                            />
+                                                            <TextInput
+                                                                style={[styles.modalInput, styles.unitInput]}
+                                                                value={editUnit}
+                                                                onChangeText={setEditUnit}
+                                                                placeholder="Unidade"
+                                                                placeholderTextColor="#999999"
+                                                            />
+                                                        </View>
+                                                    </>
+                                                )}
+
+                                                <Pressable
+                                                    style={[styles.primaryModalButton, saving && styles.disabledButton]}
+                                                    onPress={handleSaveEdit}
+                                                    disabled={saving}
+                                                >
+                                                    <Text style={styles.primaryModalButtonText}>
+                                                        {saving ? 'Salvando...' : 'Salvar alterações'}
+                                                    </Text>
+                                                </Pressable>
+
+                                                <Pressable style={styles.cancelButton} onPress={() => setIsEditing(false)}>
+                                                    <Text style={styles.cancelButtonText}>Cancelar edição</Text>
+                                                </Pressable>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <View style={[styles.indicatorIcon, { backgroundColor: selectedIndicator.backgroundColor || '#EEF5E7' }]}>
+                                                    <MaterialCommunityIcons
+                                                        name={selectedIndicator.iconName || 'puzzle-outline'}
+                                                        size={35}
+                                                        color={selectedIndicator.iconColor || COLORS.primary}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.detailName}>{selectedIndicator.name || selectedIndicator.title}</Text>
+                                                <Text style={styles.detailDescription}>
+                                                    {selectedIndicator.description || 'Nenhuma descrição adicionada.'}
+                                                </Text>
+
+                                                <View style={styles.detailCard}>
+                                                    <Text style={styles.detailLabel}>META DEFINIDA</Text>
+                                                    <Text style={styles.detailValue}>
+                                                        {selectedIndicator.type === 'conclusao'
+                                                            ? 'Concluir atividade'
+                                                            : `${selectedIndicator.target ?? 'Não definida'} ${selectedIndicator.unit || ''}`.trim()}
+                                                    </Text>
+                                                </View>
+
+                                                <View style={styles.detailCard}>
+                                                    <Text style={styles.detailLabel}>PROGRESSO ATUAL</Text>
+                                                    <Text style={styles.detailValue}>
+                                                        {selectedIndicator.type === 'conclusao'
+                                                            ? (selectedIndicator.completed ? 'Concluído' : 'Não concluído')
+                                                            : `${selectedIndicator.currentValue ?? 0} / ${selectedIndicator.target ?? 0} ${selectedIndicator.unit || ''}`.trim()}
+                                                    </Text>
+                                                </View>
+
+                                                <View style={styles.detailCard}>
+                                                    <Text style={styles.detailLabel}>FREQUÊNCIA</Text>
+                                                    <Text style={styles.detailValue}>
+                                                        {selectedIndicator.frequency || 'Não definida'}
+                                                    </Text>
+                                                    {selectedIndicator.selectedDays?.length > 0 && (
+                                                        <Text style={styles.detailDescription}>
+                                                            {selectedIndicator.selectedDays.join(', ')}
+                                                        </Text>
+                                                    )}
+                                                </View>
+
+                                                {!selectedIndicator.completed && (
+                                                    <Pressable
+                                                        style={[styles.primaryModalButton, saving && styles.disabledButton]}
+                                                        onPress={handleCompleteIndicator}
+                                                        disabled={saving}
+                                                    >
+                                                        <MaterialCommunityIcons name="check-circle-outline" size={21} color="#FFFFFF" />
+                                                        <Text style={styles.primaryModalButtonText}>
+                                                            {saving ? 'Concluindo...' : 'Marcar como concluído'}
+                                                        </Text>
+                                                    </Pressable>
+                                                )}
+
+                                                <View style={styles.actionRow}>
+                                                    <Pressable style={styles.editButton} onPress={() => setIsEditing(true)}>
+                                                        <MaterialCommunityIcons name="pencil-outline" size={19} color={COLORS.primary} />
+                                                        <Text style={styles.editButtonText}>Editar</Text>
+                                                    </Pressable>
+                                                    <Pressable style={styles.deleteButton} onPress={handleDeleteIndicator} disabled={saving}>
+                                                        <MaterialCommunityIcons name="trash-can-outline" size={19} color="#D9534F" />
+                                                        <Text style={styles.deleteButtonText}>Excluir</Text>
+                                                    </Pressable>
+                                                </View>
+                                            </>
+                                        )}
+                                    </>
+                                )}
+                            </ScrollView>
+                        </View>
+                    </View>
+                </Modal>
+
+                {/* CONFIRMAÇÃO DE EXCLUSÃO - compatível com Web e Android */}
+                <Modal
+                    visible={deleteConfirmVisible}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setDeleteConfirmVisible(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.deleteConfirmContainer}>
+                            <View style={styles.deleteConfirmIcon}>
+                                <MaterialCommunityIcons
+                                    name="trash-can-outline"
+                                    size={30}
+                                    color="#D9534F"
+                                />
+                            </View>
+
+                            <Text style={styles.deleteConfirmTitle}>
+                                Excluir indicador?
+                            </Text>
+
+                            <Text style={styles.deleteConfirmText}>
+                                Tem certeza que deseja excluir
+                                {' '}
+                                <Text style={styles.deleteConfirmName}>
+                                    {selectedIndicator?.name || selectedIndicator?.title || 'este indicador'}
+                                </Text>
+                                ? Essa ação não poderá ser desfeita.
+                            </Text>
+
+                            <View style={styles.deleteConfirmActions}>
+                                <Pressable
+                                    style={styles.deleteCancelButton}
+                                    onPress={() => setDeleteConfirmVisible(false)}
+                                    disabled={saving}
+                                >
+                                    <Text style={styles.deleteCancelText}>
+                                        Cancelar
+                                    </Text>
+                                </Pressable>
+
+                                <Pressable
+                                    style={[
+                                        styles.deleteConfirmButton,
+                                        saving && styles.disabledButton,
+                                    ]}
+                                    onPress={confirmDeleteIndicator}
+                                    disabled={saving}
+                                >
+                                    <Text style={styles.deleteConfirmButtonText}>
+                                        {saving ? 'Excluindo...' : 'Sim, excluir'}
+                                    </Text>
+                                </Pressable>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
             </SafeAreaView>
         </ImageBackground>
     );
@@ -704,4 +1027,270 @@ const styles = StyleSheet.create({
             },
         ],
     },
+
+
+    // Modal de detalhes e edição dos indicadores
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+
+    modalContainer: {
+        width: '100%',
+        maxWidth: 430,
+        maxHeight: '85%',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 25,
+        padding: 22,
+    },
+
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 22,
+    },
+
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: COLORS.text,
+    },
+
+    indicatorIcon: {
+        width: 70,
+        height: 70,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+        alignSelf: 'center',
+        marginBottom: 15,
+    },
+
+    detailName: {
+        fontSize: 22,
+        fontWeight: '700',
+        color: COLORS.text,
+        textAlign: 'center',
+    },
+
+    detailDescription: {
+        fontSize: 14,
+        color: '#777777',
+        textAlign: 'center',
+        lineHeight: 21,
+        marginTop: 7,
+        marginBottom: 18,
+    },
+
+    detailCard: {
+        backgroundColor: '#F7F9F6',
+        borderRadius: 14,
+        padding: 15,
+        marginBottom: 10,
+    },
+
+    detailLabel: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#858585',
+        marginBottom: 6,
+        letterSpacing: 0.5,
+    },
+
+    detailValue: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.text,
+    },
+
+    primaryModalButton: {
+        minHeight: 50,
+        backgroundColor: COLORS.primary,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+        gap: 8,
+        marginTop: 12,
+        paddingHorizontal: 12,
+    },
+
+    primaryModalButtonText: {
+        color: '#FFFFFF',
+        fontSize: 15,
+        fontWeight: '700',
+    },
+
+    disabledButton: {
+        opacity: 0.6,
+    },
+
+    deleteConfirmContainer: {
+        width: '100%',
+        maxWidth: 360,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 22,
+        padding: 24,
+        alignItems: 'center',
+    },
+
+    deleteConfirmIcon: {
+        width: 62,
+        height: 62,
+        borderRadius: 31,
+        backgroundColor: '#FCEDEC',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 14,
+    },
+
+    deleteConfirmTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: COLORS.text,
+        textAlign: 'center',
+    },
+
+    deleteConfirmText: {
+        marginTop: 10,
+        marginBottom: 22,
+        fontSize: 14,
+        lineHeight: 21,
+        color: '#6F6F6F',
+        textAlign: 'center',
+    },
+
+    deleteConfirmName: {
+        fontWeight: '700',
+        color: COLORS.text,
+    },
+
+    deleteConfirmActions: {
+        width: '100%',
+        flexDirection: 'row',
+        gap: 10,
+    },
+
+    deleteCancelButton: {
+        flex: 1,
+        minHeight: 46,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E2E2E2',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    deleteCancelText: {
+        color: '#666666',
+        fontWeight: '600',
+    },
+
+    deleteConfirmButton: {
+        flex: 1,
+        minHeight: 46,
+        borderRadius: 12,
+        backgroundColor: '#D9534F',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    deleteConfirmButtonText: {
+        color: '#FFFFFF',
+        fontWeight: '700',
+    },
+
+    actionRow: {
+        flexDirection: 'row',
+        gap: 10,
+        marginTop: 12,
+    },
+
+    editButton: {
+        flex: 1,
+        minHeight: 46,
+        borderWidth: 1,
+        borderColor: COLORS.primary,
+        borderRadius: 13,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+    },
+
+    editButtonText: {
+        color: COLORS.primary,
+        fontWeight: '600',
+    },
+
+    deleteButton: {
+        flex: 1,
+        minHeight: 46,
+        borderWidth: 1,
+        borderColor: '#E8B7B5',
+        borderRadius: 13,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+    },
+
+    deleteButtonText: {
+        color: '#D9534F',
+        fontWeight: '600',
+    },
+
+    fieldLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: COLORS.text,
+        marginBottom: 7,
+        marginTop: 12,
+    },
+
+    modalInput: {
+        minHeight: 48,
+        borderWidth: 1,
+        borderColor: '#E3E8E1',
+        borderRadius: 12,
+        paddingHorizontal: 13,
+        fontSize: 15,
+        color: COLORS.text,
+        backgroundColor: '#FFFFFF',
+    },
+
+    descriptionInput: {
+        minHeight: 85,
+        paddingTop: 12,
+        textAlignVertical: 'top',
+    },
+
+    targetRow: {
+        flexDirection: 'row',
+        gap: 10,
+    },
+
+    targetInput: {
+        flex: 1,
+    },
+
+    unitInput: {
+        flex: 1,
+    },
+
+    cancelButton: {
+        alignItems: 'center',
+        padding: 13,
+        marginTop: 5,
+    },
+
+    cancelButtonText: {
+        color: '#777777',
+        fontWeight: '600',
+    },
+
 });

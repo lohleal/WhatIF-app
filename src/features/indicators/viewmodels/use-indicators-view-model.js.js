@@ -1,5 +1,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 import {
     collection,
     onSnapshot,
@@ -79,7 +80,6 @@ function getIndicatorStyle(indicator, index) {
         return INDICATOR_STYLES[4];
     }
 
-    // Estilo padrão para indicadores sem correspondência
     return INDICATOR_STYLES[index % INDICATOR_STYLES.length];
 }
 
@@ -106,125 +106,102 @@ export default function useIndicatorsViewModel() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        let unsubscribe;
+        let unsubscribeIndicators;
 
-        const unsubscribeAuth = auth.onAuthStateChanged
-            ? auth.onAuthStateChanged((usuario) => {
-                  if (unsubscribe) {
-                      unsubscribe();
-                      unsubscribe = undefined;
-                  }
-
-                  if (!usuario) {
-                      setIndicators([]);
-                      setError('Nenhum usuário está autenticado.');
-                      setLoading(false);
-                      return;
-                  }
-
-                  setLoading(true);
-                  setError(null);
-
-                  const consulta = query(
-                      collection(db, 'indicators'),
-                      where('userId', '==', usuario.uid)
-                  );
-
-                  unsubscribe = onSnapshot(
-                      consulta,
-                      (snapshot) => {
-                          const dados = snapshot.docs.map(
-                              (documento, index) => {
-                                  const indicador = documento.data();
-                                  const visual = getIndicatorStyle(
-                                      indicador,
-                                      index
-                                  );
-
-                                  return {
-                                      ...indicador,
-                                      id: documento.id,
-                                      title:
-                                          indicador.name ??
-                                          'Indicador sem nome',
-                                      completed:
-                                          indicador.completed ?? false,
-                                      value: formatIndicatorValue(indicador),
-                                      ...visual,
-                                  };
-                              }
-                          );
-
-                          setIndicators(dados);
-                          setLoading(false);
-                          setError(null);
-                      },
-                      (erro) => {
-                          console.error(
-                              'Erro ao carregar indicadores:',
-                              erro
-                          );
-                          setError('Não foi possível carregar os indicadores.');
-                          setLoading(false);
-                      }
-                  );
-              })
-            : null;
-
-        // Compatibilidade com configurações que não usam o listener de autenticação
-        if (!unsubscribeAuth) {
-            const usuario = auth.currentUser;
+        const unsubscribeAuth = onAuthStateChanged(auth, (usuario) => {
+            if (unsubscribeIndicators) {
+                unsubscribeIndicators();
+                unsubscribeIndicators = undefined;
+            }
 
             if (!usuario) {
                 setIndicators([]);
                 setError('Nenhum usuário está autenticado.');
                 setLoading(false);
-            } else {
-                const consulta = query(
-                    collection(db, 'indicators'),
-                    where('userId', '==', usuario.uid)
-                );
-
-                unsubscribe = onSnapshot(
-                    consulta,
-                    (snapshot) => {
-                        const dados = snapshot.docs.map(
-                            (documento, index) => {
-                                const indicador = documento.data();
-
-                                return {
-                                    ...indicador,
-                                    id: documento.id,
-                                    title:
-                                        indicador.name ??
-                                        'Indicador sem nome',
-                                    completed:
-                                        indicador.completed ?? false,
-                                    value: formatIndicatorValue(indicador),
-                                    ...getIndicatorStyle(indicador, index),
-                                };
-                            }
-                        );
-
-                        setIndicators(dados);
-                        setLoading(false);
-                        setError(null);
-                    },
-                    (erro) => {
-                        console.error(
-                            'Erro ao carregar indicadores:',
-                            erro
-                        );
-                        setError('Não foi possível carregar os indicadores.');
-                        setLoading(false);
-                    }
-                );
+                return;
             }
-        }
+
+            setLoading(true);
+            setError(null);
+
+            const consulta = query(
+                collection(db, 'indicators'),
+                where('userId', '==', usuario.uid)
+            );
+
+            unsubscribeIndicators = onSnapshot(
+                consulta,
+                (snapshot) => {
+                    const dados = snapshot.docs.map((documento, index) => {
+                        const indicador = documento.data();
+
+                        // Estilo antigo usado apenas como alternativa
+                        const visual = getIndicatorStyle(indicador, index);
+
+                        return {
+                            ...indicador,
+
+                            id: documento.id,
+
+                            title:
+                                indicador.name ??
+                                'Indicador sem nome',
+
+                            description:
+                                indicador.description ?? '',
+
+                            target: indicador.target ?? null,
+
+                            currentValue:
+                                indicador.currentValue ?? 0,
+
+                            unit: indicador.unit ?? '',
+
+                            frequency:
+                                indicador.frequency ?? '',
+
+                            selectedDays:
+                                indicador.selectedDays ?? [],
+
+                            completed:
+                                indicador.completed ?? false,
+
+                            value: formatIndicatorValue(indicador),
+
+                            // Prioriza as escolhas salvas pelo estudante
+                            iconName:
+                                indicador.iconName ?? visual.iconName,
+
+                            iconColor:
+                                indicador.iconColor ?? visual.iconColor,
+
+                            backgroundColor:
+                                indicador.backgroundColor ?? visual.backgroundColor,
+                        };
+                    });
+
+                    setIndicators(dados);
+                    setLoading(false);
+                    setError(null);
+                },
+                (erro) => {
+                    console.error(
+                        'Erro ao carregar indicadores:',
+                        erro
+                    );
+
+                    setError('Não foi possível carregar os indicadores.');
+                    setLoading(false);
+                }
+            );
+        });
 
         return () => {
-            if (unsubscribe) unsubscribe();
-            if (unsubscribeAuth) unsubscribeAuth();
+            if (unsubscribeIndicators) {
+                unsubscribeIndicators();
+            }
+
+            unsubscribeAuth();
         };
     }, []);
 

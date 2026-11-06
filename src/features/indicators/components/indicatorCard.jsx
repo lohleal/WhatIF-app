@@ -25,19 +25,12 @@ function getPuzzleEdges(index, total) {
     const hasTop = index >= COLUMNS;
     const hasBottom = index + COLUMNS < total;
 
-    // Mantém o padrão lateral igual em todas as linhas:
-    // 1ª coluna: saliência à direita
-    // 2ª coluna: entradas nas laterais
-    // 3ª coluna: saliências nas duas laterais
-    // 4ª coluna: entrada à esquerda
     const rightPattern = ['out', 'in', 'out', 'flat'];
     const leftPattern = ['flat', 'in', 'out', 'in'];
 
     const right = hasRight ? rightPattern[column] : 'flat';
     const left = hasLeft ? leftPattern[column] : 'flat';
 
-    // Alterna as peças superiores e inferiores,
-    // garantindo encaixes complementares entre as linhas.
     function verticalEdge(r, c) {
         return (r + c) % 2 === 0 ? 'in' : 'out';
     }
@@ -169,7 +162,17 @@ export default function IndicatorCard({
     const iconSize = Math.max(16, Math.min(28, 28 * scale));
     const titleSize = Math.max(9, Math.min(12, 12 * scale));
     const valueSize = Math.max(8, Math.min(10, 10 * scale));
-    //const overlapVertical = Math.min(10, width * 0.045);
+
+    // Personalização só aparece colorida após a conclusão.
+    const completed = indicator.completed === true;
+
+    const pieceColor = completed
+        ? indicator.backgroundColor || '#DCEFF5'
+        : '#F0F0F0';
+
+    const iconColor = completed
+        ? indicator.iconColor || '#5A8EAD'
+        : '#A5A5A5';
 
     return (
         <Pressable
@@ -194,7 +197,7 @@ export default function IndicatorCard({
             >
                 <Path
                     d={path}
-                    fill={indicator.backgroundColor || '#F3F3F3'}
+                    fill={pieceColor}
                     stroke="#FFFFFF"
                     strokeWidth={1.5}
                     strokeLinejoin="round"
@@ -213,7 +216,7 @@ export default function IndicatorCard({
                 <MaterialCommunityIcons
                     name={indicator.iconName || 'circle-outline'}
                     size={iconSize}
-                    color={indicator.iconColor || '#777777'}
+                    color={iconColor}
                 />
 
                 <Text

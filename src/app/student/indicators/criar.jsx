@@ -7,6 +7,7 @@ import { criarIndicador } from '../../../features/indicators/services/indicatorS
 import {
     Alert,
     KeyboardAvoidingView,
+    Modal,
     Platform,
     Pressable,
     ScrollView,
@@ -65,6 +66,32 @@ const TYPES = [
     },
 ];
 
+const INDICATOR_COLORS = [
+    { name: 'Azul', backgroundColor: '#DCEFF5', iconColor: '#5A8EAD' },
+    { name: 'Verde', backgroundColor: '#DDECC5', iconColor: '#5A8E43' },
+    { name: 'Azul claro', backgroundColor: '#DCEBFF', iconColor: '#4384C5' },
+    { name: 'Lilás', backgroundColor: '#F0E5F8', iconColor: '#9571B4' },
+    { name: 'Rosa', backgroundColor: '#FFF0EF', iconColor: '#D96F79' },
+    { name: 'Amarelo', backgroundColor: '#FFF1D6', iconColor: '#C28B2C' },
+    { name: 'Verde água', backgroundColor: '#DDF2E5', iconColor: '#4C9870' },
+    { name: 'Pêssego', backgroundColor: '#FBE5D9', iconColor: '#D47B54' },
+];
+
+const INDICATOR_ICONS = [
+    { name: 'water-outline', label: 'Água' },
+    { name: 'moon-waning-crescent', label: 'Sono' },
+    { name: 'dumbbell', label: 'Exercício' },
+    { name: 'book-open-outline', label: 'Estudo' },
+    { name: 'heart-outline', label: 'Saúde' },
+    { name: 'star-outline', label: 'Estrela' },
+    { name: 'leaf', label: 'Natureza' },
+    { name: 'run', label: 'Movimento' },
+    { name: 'meditation', label: 'Meditação' },
+    { name: 'music-note', label: 'Música' },
+    { name: 'camera-outline', label: 'Criatividade' },
+    { name: 'check-circle-outline', label: 'Conquista' },
+];
+
 const DAYS = [
     { label: 'D', name: 'Domingo' },
     { label: 'S', name: 'Segunda' },
@@ -88,6 +115,9 @@ export default function CriarIndicador() {
     const [reminderEnabled, setReminderEnabled] = useState(true);
     const [reminderTime, setReminderTime] = useState('19:00');
     const [salvando, setSalvando] = useState(false);
+    const [selectedColor, setSelectedColor] = useState(INDICATOR_COLORS[0]);
+    const [selectedIcon, setSelectedIcon] = useState('water-outline');
+    const [successModalVisible, setSuccessModalVisible] = useState(false);
 
     const selectedType = TYPES.find(item => item.id === type);
 
@@ -153,15 +183,14 @@ export default function CriarIndicador() {
                 selectedDays,
                 reminderEnabled,
                 reminderTime,
+                iconName: selectedIcon,
+                iconColor: selectedColor.iconColor,
+                backgroundColor: selectedColor.backgroundColor,
             });
 
             console.log('Indicador salvo. ID:', id);
 
-            Alert.alert(
-                'Indicador criado!',
-                'Seu indicador foi salvo com sucesso.',
-                [{ text: 'OK', onPress: () => router.back() }]
-            );
+            setSuccessModalVisible(true);
         } catch (error) {
             console.error('Erro ao criar indicador:', error);
 
@@ -233,6 +262,106 @@ export default function CriarIndicador() {
                         multiline
                         maxLength={180}
                     />
+                </View>
+
+                {/* Personalização visual */}
+                <View style={[styles.section, styles.visualSection]}>
+                    <SectionTitle
+                        icon="palette-outline"
+                        title="Personalize seu indicador"
+                        color="#568E9C"
+                    />
+
+                    <Text style={styles.helper}>
+                        Escolha uma cor para sua peça do quebra-cabeça.
+                    </Text>
+
+                    <View style={styles.colorGrid}>
+                        {INDICATOR_COLORS.map(color => {
+                            const active =
+                                selectedColor.backgroundColor === color.backgroundColor;
+
+                            return (
+                                <Pressable
+                                    key={color.name}
+                                    onPress={() => setSelectedColor(color)}
+                                    style={[
+                                        styles.colorOption,
+                                        { backgroundColor: color.backgroundColor },
+                                        active && styles.colorOptionActive,
+                                    ]}
+                                    accessibilityLabel={`Selecionar cor ${color.name}`}
+                                >
+                                    {active && (
+                                        <MaterialCommunityIcons
+                                            name="check"
+                                            size={21}
+                                            color={color.iconColor}
+                                        />
+                                    )}
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+
+                    <Text style={[styles.helper, styles.iconHelper]}>
+                        Agora escolha um ícone.
+                    </Text>
+
+                    <View style={styles.iconGrid}>
+                        {INDICATOR_ICONS.map(icon => {
+                            const active = selectedIcon === icon.name;
+
+                            return (
+                                <Pressable
+                                    key={icon.name}
+                                    onPress={() => setSelectedIcon(icon.name)}
+                                    style={[
+                                        styles.iconOption,
+                                        active && styles.iconOptionActive,
+                                    ]}
+                                    accessibilityLabel={`Selecionar ícone ${icon.label}`}
+                                >
+                                    <MaterialCommunityIcons
+                                        name={icon.name}
+                                        size={25}
+                                        color={
+                                            active
+                                                ? selectedColor.iconColor
+                                                : '#89948B'
+                                        }
+                                    />
+                                    <Text
+                                        style={[
+                                            styles.iconOptionLabel,
+                                            active && {
+                                                color: selectedColor.iconColor,
+                                                fontWeight: '700',
+                                            },
+                                        ]}
+                                    >
+                                        {icon.label}
+                                    </Text>
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+
+                    <View style={styles.previewContainer}>
+                        <Text style={styles.previewLabel}>Prévia da sua peça</Text>
+                        <View
+                            style={[
+                                styles.previewPiece,
+                                { backgroundColor: selectedColor.backgroundColor },
+                            ]}
+                        >
+                            <MaterialCommunityIcons
+                                name={selectedIcon}
+                                size={30}
+                                color={selectedColor.iconColor}
+                            />
+                        </View>
+                    </View>
                 </View>
 
                 {/* Tipo de acompanhamento */}
@@ -511,6 +640,45 @@ export default function CriarIndicador() {
                     </Text>
                 </Pressable>
             </ScrollView>
+
+            <Modal
+                visible={successModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => {
+                    setSuccessModalVisible(false);
+                    router.back();
+                }}
+            >
+                <View style={styles.successOverlay}>
+                    <View style={styles.successCard}>
+                        <View style={styles.successIconContainer}>
+                            <MaterialCommunityIcons
+                                name="check"
+                                size={38}
+                                color="#FFFFFF"
+                            />
+                        </View>
+
+                        <Text style={styles.successTitle}>Indicador criado!</Text>
+                        <Text style={styles.successMessage}>
+                            Seu indicador foi salvo com sucesso.
+                        </Text>
+
+                        <Pressable
+                            style={styles.successButton}
+                            onPress={() => {
+                                setSuccessModalVisible(false);
+                                router.back();
+                            }}
+                        >
+                            <Text style={styles.successButtonText}>
+                                Continuar
+                            </Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </Modal>
         </KeyboardAvoidingView>
     );
 }
@@ -583,6 +751,87 @@ const styles = StyleSheet.create({
 
     greenSection: {
         backgroundColor: COLORS.greenLight,
+    },
+
+    visualSection: {
+        backgroundColor: '#F4F8F5',
+    },
+
+    colorGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 12,
+        marginTop: 5,
+    },
+
+    colorOption: {
+        width: 43,
+        height: 43,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: 'transparent',
+    },
+
+    colorOptionActive: {
+        borderColor: COLORS.primary,
+    },
+
+    iconHelper: {
+        marginTop: 20,
+    },
+
+    iconGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 9,
+        marginTop: 5,
+    },
+
+    iconOption: {
+        width: '22%',
+        minHeight: 76,
+        borderRadius: 13,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 9,
+        gap: 5,
+    },
+
+    iconOptionActive: {
+        borderWidth: 2,
+        borderColor: COLORS.primary,
+        backgroundColor: '#FFFFFF',
+    },
+
+    iconOptionLabel: {
+        fontSize: 10,
+        color: COLORS.secondaryText,
+        textAlign: 'center',
+    },
+
+    previewContainer: {
+        marginTop: 18,
+        alignItems: 'center',
+    },
+
+    previewLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: COLORS.secondaryText,
+        marginBottom: 9,
+    },
+
+    previewPiece: {
+        width: 66,
+        height: 66,
+        borderRadius: 19,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     blueSection: {
@@ -850,6 +1099,64 @@ const styles = StyleSheet.create({
     createButtonText: {
         color: '#FFFFFF',
         fontSize: 16,
+        fontWeight: '700',
+    },
+
+    successOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.42)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+    },
+
+    successCard: {
+        width: '100%',
+        maxWidth: 360,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 24,
+        padding: 26,
+        alignItems: 'center',
+    },
+
+    successIconContainer: {
+        width: 70,
+        height: 70,
+        borderRadius: 35,
+        backgroundColor: COLORS.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 17,
+    },
+
+    successTitle: {
+        fontSize: 21,
+        fontWeight: '800',
+        color: COLORS.text,
+        textAlign: 'center',
+    },
+
+    successMessage: {
+        marginTop: 8,
+        fontSize: 14,
+        lineHeight: 21,
+        color: COLORS.secondaryText,
+        textAlign: 'center',
+    },
+
+    successButton: {
+        width: '100%',
+        minHeight: 49,
+        borderRadius: 14,
+        backgroundColor: COLORS.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 23,
+    },
+
+    successButtonText: {
+        color: '#FFFFFF',
+        fontSize: 15,
         fontWeight: '700',
     },
 

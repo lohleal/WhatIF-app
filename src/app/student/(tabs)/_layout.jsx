@@ -76,12 +76,12 @@ export default function StudentLayout() {
             />
 
             <Tabs.Screen
-                name="comunidade"
+                name="kanban"
                 options={{
-                    title: 'Comunidade',
+                    title: 'Kanban',
                     tabBarIcon: ({ color, size }) => (
                         <MaterialCommunityIcons
-                            name="account-group-outline"
+                            name="view-dashboard-outline"
                             color={color}
                             size={size}
                         />
