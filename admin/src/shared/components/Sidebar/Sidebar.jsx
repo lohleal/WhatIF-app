@@ -1,14 +1,14 @@
 
 import {
-    ChartNoAxesCombined,
-    Layers,
-    LayoutDashboard,
-    Leaf,
-    Settings,
-    Users,
+  ChartNoAxesCombined,
+  Layers,
+  LayoutDashboard,
+  Settings,
+  Users
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
+import logo from '../../../assets/logo.png';
 import './Sidebar.css';
 
 const menuItems = [
@@ -44,7 +44,7 @@ export default function Sidebar() {
     <aside className="sidebar">
       <div className="sidebar-brand">
         <div className="brand-icon">
-          <Leaf size={32} strokeWidth={1.8} />
+          <img src={logo} alt="Logo What IF App" />
         </div>
 
         <div className="brand-text">

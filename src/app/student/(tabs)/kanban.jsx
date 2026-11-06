@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
         flex: 1,
         position: 'relative',
         paddingHorizontal: 22,
-        paddingTop: 12,
+        paddingTop: 50,
     },
 
     header: {

@@ -18,9 +18,18 @@
 }
 
 .brand-icon {
-  color: var(--color-primary-dark);
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.brand-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .brand-text h2 {
