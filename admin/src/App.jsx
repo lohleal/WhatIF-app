@@ -1,5 +1,6 @@
 
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import GroupsScreen from './features/groups/views/GroupsScreen';
 
 import DashboardScreen from './features/dashboard/views/DashboardScreen';
 import AdminLayout from './shared/components/Layout/AdminLayout';
@@ -21,7 +22,7 @@ function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardScreen />} />
           <Route path="students" element={<ComingSoon title="Estudantes" />} />
-          <Route path="groups" element={<ComingSoon title="Grupos" />} />
+          <Route path="groups" element={<GroupsScreen />} />
           <Route path="reports" element={<ComingSoon title="Relatórios" />} />
           <Route path="settings" element={<ComingSoon title="Configurações" />} />
         </Route>

@@ -1,12 +1,18 @@
 
 .sidebar {
   width: 265px;
-  min-height: 100vh;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
   background: var(--color-sidebar);
   padding: 32px 16px 24px;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  overflow-y: auto;
+  box-sizing: border-box;
+  z-index: 1000;
 }
 
 .sidebar-brand {
