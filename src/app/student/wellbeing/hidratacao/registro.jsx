@@ -67,12 +67,16 @@ export default function AdicionarRegistroAgua() {
         (registro) => registro.dateKey === hojeKey
     );
 
+    const [objetivoDiario, setObjetivoDiario] = useState(2000);
+
     const total = registrosDeHoje.reduce(
         (soma, registro) => soma + registro.ml,
         0
     );
 
-    const progresso = Math.min((total / 2000) * 100, 100);
+    const progresso = objetivoDiario > 0
+        ? Math.min((total / objetivoDiario) * 100, 100)
+        : 0;
 
     function ajustarQuantidade(valor) {
         const atual = Number(quantidade) || 0;
@@ -217,6 +221,32 @@ export default function AdicionarRegistroAgua() {
                 console.error('Erro ao carregar atalhos:', erro);
             });
 
+        // Carregar objetivo diário de hidratação
+        const objetivoRef = doc(
+            db,
+            'users',
+            usuario.uid,
+            'waterObjectives',
+            'objective'
+        );
+
+        const unsubscribeObjetivo = onSnapshot(
+            objetivoRef,
+            (snapshot) => {
+                if (snapshot.exists()) {
+                    const dados = snapshot.data();
+
+                    if (
+                        Number.isFinite(dados.dailyGoalMl) &&
+                        dados.dailyGoalMl > 0
+                    ) {
+                        setObjetivoDiario(dados.dailyGoalMl);
+                    }
+                }
+            },
+            (erro) => console.error('Erro ao carregar objetivo:', erro)
+        );
+
         const registrosRef = collection(
             db,
             'users',
@@ -260,7 +290,10 @@ export default function AdicionarRegistroAgua() {
             }
         );
 
-        return unsubscribe;
+        return () => {
+            unsubscribe();
+            unsubscribeObjetivo();
+        };
     }, []);
 
     return (
@@ -307,7 +340,7 @@ export default function AdicionarRegistroAgua() {
                             <Text style={styles.totalUnit}> ml</Text>
                         </Text>
 
-                    
+
                         <View style={styles.waterIllustration}>
                             <MaterialCommunityIcons
                                 name="cup-water"
@@ -330,7 +363,7 @@ export default function AdicionarRegistroAgua() {
                                 Água registrada
                             </Text>
                             <Text style={styles.progressGoal}>
-                                Objetivo: 2.000 ml
+                                Objetivo: {objetivoDiario.toLocaleString('pt-BR')} ml
                             </Text>
                         </View>
 

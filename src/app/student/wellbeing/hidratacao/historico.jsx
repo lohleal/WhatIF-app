@@ -1,7 +1,18 @@
 
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+import { auth, db } from '../../../../services/firebase/firebaseConfig';
+
+import {
+    collection,
+    doc,
+    onSnapshot,
+    orderBy,
+    query,
+} from 'firebase/firestore';
+
 import {
     Pressable,
     ScrollView,
@@ -19,37 +30,191 @@ const BORDER = '#D9EAFB';
 const MUTED = '#71869D';
 const WHITE = '#FFFFFF';
 
-const dadosHoje = [
-    { horario: '6h', ml: 100 },
-    { horario: '9h', ml: 250 },
-    { horario: '12h', ml: 400 },
-    { horario: '15h', ml: 280 },
-    { horario: '18h', ml: 220 },
-    { horario: '21h', ml: 100 },
-];
 
-const dadosSemana = [
-    { horario: 'Seg', ml: 1500 },
-    { horario: 'Ter', ml: 2000 },
-    { horario: 'Qua', ml: 1800 },
-    { horario: 'Qui', ml: 2200 },
-    { horario: 'Sex', ml: 1700 },
-    { horario: 'Sáb', ml: 2500 },
-    { horario: 'Dom', ml: 1900 },
-];
-
-const dadosMes = [
-    { horario: 'Sem. 1', ml: 12500 },
-    { horario: 'Sem. 2', ml: 14200 },
-    { horario: 'Sem. 3', ml: 13800 },
-    { horario: 'Sem. 4', ml: 15100 },
-];
 
 export default function ProgressoAgua() {
     const router = useRouter();
 
     const [periodo, setPeriodo] = useState('Hoje');
     const [meta, setMeta] = useState(2000);
+    const [registros, setRegistros] = useState([]);
+    const [carregando, setCarregando] = useState(true);
+    const [periodoSelecionado, setPeriodoSelecionado] = useState(null);
+
+    useEffect(() => {
+        const usuario = auth.currentUser;
+
+        if (!usuario) {
+            setCarregando(false);
+            return;
+        }
+
+        // Buscar objetivo diário
+        const objetivoRef = doc(
+            db,
+            'users',
+            usuario.uid,
+            'waterObjectives',
+            'objective'
+        );
+
+        const unsubscribeObjetivo = onSnapshot(
+            objetivoRef,
+            (snapshot) => {
+                if (snapshot.exists()) {
+                    const dados = snapshot.data();
+
+                    if (
+                        Number.isFinite(dados.dailyGoalMl) &&
+                        dados.dailyGoalMl > 0
+                    ) {
+                        setMeta(dados.dailyGoalMl);
+                    }
+                }
+            },
+            (erro) => console.error('Erro ao carregar objetivo:', erro)
+        );
+
+        // Buscar registros de água
+        const registrosRef = collection(
+            db,
+            'users',
+            usuario.uid,
+            'waterRecords'
+        );
+
+        const consulta = query(
+            registrosRef,
+            orderBy('consumedAt', 'desc')
+        );
+
+        const unsubscribeRegistros = onSnapshot(
+            consulta,
+            (snapshot) => {
+                const dados = snapshot.docs.map((documento) => {
+                    const registro = documento.data();
+
+                    return {
+                        id: documento.id,
+                        ml: registro.amountMl || 0,
+                        data: registro.consumedAt?.toDate() || null,
+                    };
+                });
+
+                setRegistros(dados);
+                setCarregando(false);
+            },
+            (erro) => {
+                console.error('Erro ao carregar registros:', erro);
+                setCarregando(false);
+            }
+        );
+
+        return () => {
+            unsubscribeObjetivo();
+            unsubscribeRegistros();
+        };
+    }, []);
+
+    const agora = new Date();
+
+    function inicioDoDia(data) {
+        return new Date(
+            data.getFullYear(),
+            data.getMonth(),
+            data.getDate()
+        );
+    }
+
+    const hoje = inicioDoDia(agora);
+
+    const inicioSemana = new Date(hoje);
+    inicioSemana.setDate(hoje.getDate() - 6);
+
+    const inicioMes = new Date(hoje);
+    inicioMes.setDate(hoje.getDate() - 29);
+
+    // Filtrar registros conforme o período selecionado
+    const registrosPeriodo = registros.filter((registro) => {
+        if (!registro.data) return false;
+
+        const dataRegistro = inicioDoDia(registro.data);
+
+        if (periodo === 'Hoje') {
+            return dataRegistro.getTime() === hoje.getTime();
+        }
+
+        if (periodo === 'Semana') {
+            return (
+                dataRegistro >= inicioSemana &&
+                dataRegistro <= hoje
+            );
+        }
+
+        return (
+            dataRegistro >= inicioMes &&
+            dataRegistro <= hoje
+        );
+    });
+
+    // Dados de hoje: consumo por faixa de horário
+    const dadosHoje = Array.from({ length: 6 }, (_, index) => {
+        const horaInicial = index * 4;
+
+        const ml = registrosPeriodo
+            .filter((registro) => {
+                const hora = registro.data.getHours();
+
+                return hora >= horaInicial && hora < horaInicial + 4;
+            })
+            .reduce((soma, registro) => soma + registro.ml, 0);
+
+        return {
+            horario: `${String(horaInicial).padStart(2, '0')}h`,
+            ml,
+        };
+    });
+
+    // Dados da semana: consumo por dia
+    const dadosSemana = Array.from({ length: 7 }, (_, index) => {
+        const data = new Date(inicioSemana);
+        data.setDate(inicioSemana.getDate() + index);
+
+        const ml = registrosPeriodo
+            .filter((registro) => {
+                return (
+                    inicioDoDia(registro.data).getTime() ===
+                    data.getTime()
+                );
+            })
+            .reduce((soma, registro) => soma + registro.ml, 0);
+
+        const nomesDias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+        return {
+            horario: nomesDias[data.getDay()],
+            ml,
+        };
+    });
+
+    // Dados do mês: consumo agrupado por semana
+    const dadosMes = Array.from({ length: 5 }, (_, index) => {
+        const ml = registrosPeriodo
+            .filter((registro) => {
+                const diferencaDias = Math.floor(
+                    (inicioDoDia(registro.data) - inicioMes) /
+                    (1000 * 60 * 60 * 24)
+                );
+
+                return Math.floor(diferencaDias / 7) === index;
+            })
+            .reduce((soma, registro) => soma + registro.ml, 0);
+
+        return {
+            horario: `Sem. ${index + 1}`,
+            ml,
+        };
+    });
 
     const dadosPeriodo =
         periodo === 'Hoje'
@@ -68,17 +233,14 @@ export default function ProgressoAgua() {
 
     const mediaDiaria = Math.round(totalPeriodo / diasDoPeriodo);
 
-    const metaPeriodo =
-        periodo === 'Hoje'
-            ? meta
-            : periodo === 'Semana'
-                ? meta * 7
-                : meta * 30;
+    const metaPeriodo = meta * diasDoPeriodo;
 
-    const porcentagem = Math.min(
-        Math.round((totalPeriodo / metaPeriodo) * 100),
-        100
-    );
+    const porcentagem = metaPeriodo > 0
+        ? Math.min(
+            Math.round((totalPeriodo / metaPeriodo) * 100),
+            100
+        )
+        : 0;
 
     const melhorPeriodo = dadosPeriodo.reduce(
         (maior, item) => item.ml > maior.ml ? item : maior,
@@ -123,6 +285,11 @@ export default function ProgressoAgua() {
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
             >
+                {carregando && (
+                    <Text style={{ color: MUTED, textAlign: 'center', marginBottom: 12 }}>
+                        Atualizando seu histórico...
+                    </Text>
+                )}
                 {/* CABEÇALHO */}
                 <View style={styles.header}>
                     <Pressable
@@ -160,7 +327,10 @@ export default function ProgressoAgua() {
                     {['Hoje', 'Semana', 'Mês'].map((item) => (
                         <Pressable
                             key={item}
-                            onPress={() => setPeriodo(item)}
+                            onPress={() => {
+                                setPeriodo(item);
+                                setPeriodoSelecionado(null);
+                            }}
                             style={[
                                 styles.tab,
                                 periodo === item && styles.activeTab,
@@ -170,7 +340,7 @@ export default function ProgressoAgua() {
                                 style={[
                                     styles.tabText,
                                     periodo === item &&
-                                        styles.activeTabText,
+                                    styles.activeTabText,
                                 ]}
                             >
                                 {item}
@@ -401,20 +571,30 @@ export default function ProgressoAgua() {
                             const destaque =
                                 item.horario === melhorPeriodo.horario;
 
+                            const selecionado =
+                                periodoSelecionado === item.horario;
+
                             const altura =
                                 (item.ml / maximoGrafico) * 100;
 
                             return (
-                                <View
+                                <Pressable
                                     key={item.horario}
                                     style={styles.barColumn}
+                                    onPress={() => {
+                                        setPeriodoSelecionado(
+                                            selecionado ? null : item.horario
+                                        );
+                                    }}
                                 >
                                     <Text style={styles.barValue}>
-                                        {destaque
-                                            ? item.ml >= 1000
-                                                ? `${formatarLitros(item.ml)} L`
-                                                : `${item.ml}`
-                                            : ''}
+                                        {selecionado
+                                            ? `${item.ml.toLocaleString('pt-BR')} ml`
+                                            : destaque
+                                                ? item.ml >= 1000
+                                                    ? `${formatarLitros(item.ml)} L`
+                                                    : `${item.ml}`
+                                                : ''}
                                     </Text>
 
                                     <View style={styles.barTrack}>
@@ -423,6 +603,9 @@ export default function ProgressoAgua() {
                                                 styles.bar,
                                                 { height: `${altura}%` },
                                                 destaque && styles.barActive,
+                                                selecionado && {
+                                                    backgroundColor: DARK_BLUE,
+                                                },
                                             ]}
                                         />
                                     </View>
@@ -433,10 +616,38 @@ export default function ProgressoAgua() {
                                     >
                                         {item.horario}
                                     </Text>
-                                </View>
+                                </Pressable>
                             );
                         })}
                     </View>
+
+                    {periodoSelecionado && (
+                        <View style={{
+                            backgroundColor: '#E2F2FF',
+                            padding: 12,
+                            borderRadius: 12,
+                            marginTop: 12,
+                            alignItems: 'center',
+                        }}>
+                            <Text style={{
+                                color: MUTED,
+                                fontSize: 12,
+                            }}>
+                                Consumo em {periodoSelecionado}
+                            </Text>
+
+                            <Text style={{
+                                color: DARK_BLUE,
+                                fontSize: 20,
+                                fontWeight: '800',
+                                marginTop: 3,
+                            }}>
+                                {dadosPeriodo
+                                    .find(item => item.horario === periodoSelecionado)
+                                    ?.ml.toLocaleString('pt-BR')} ml
+                            </Text>
+                        </View>
+                    )}
 
                     <Text style={styles.chartCaption}>
                         {periodo === 'Hoje'
@@ -527,10 +738,10 @@ const styles = StyleSheet.create({
     },
 
     content: {
-    paddingHorizontal: 22,
-    paddingTop: 12,
-    paddingBottom: 30,
-},
+        paddingHorizontal: 22,
+        paddingTop: 12,
+        paddingBottom: 30,
+    },
 
     header: {
         flexDirection: 'row',

@@ -1,7 +1,7 @@
 
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
     Alert,
@@ -16,6 +16,14 @@ import {
 
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { auth, db } from '../../../../services/firebase/firebaseConfig';
+
+import {
+    doc,
+    getDoc,
+    serverTimestamp,
+    setDoc,
+} from 'firebase/firestore';
 
 const BLUE = '#75BDF8';
 const DARK_BLUE = '#174675';
@@ -38,6 +46,67 @@ export default function ObjetivoHidratacao() {
 
     const [mostrarSeletorHorario, setMostrarSeletorHorario] =
         useState(false);
+
+    useEffect(() => {
+        async function carregarObjetivo() {
+            const usuario = auth.currentUser;
+
+            if (!usuario) return;
+
+            try {
+                const objetivoRef = doc(
+                    db,
+                    'users',
+                    usuario.uid,
+                    'waterObjectives',
+                    'objective'
+                );
+
+                const documento = await getDoc(objetivoRef);
+
+                if (documento.exists()) {
+                    const configuracoes = documento.data();
+
+                    if (
+                        Number.isFinite(configuracoes.dailyGoalMl) &&
+                        configuracoes.dailyGoalMl > 0
+                    ) {
+                        setObjetivoTexto(
+                            (configuracoes.dailyGoalMl / 1000).toLocaleString(
+                                'pt-BR',
+                                { maximumFractionDigits: 2 }
+                            )
+                        );
+                    }
+
+                    if (
+                        typeof configuracoes.notificationsEnabled === 'boolean'
+                    ) {
+                        setNotificacao(configuracoes.notificationsEnabled);
+                    }
+
+                    if (configuracoes.reminderTime) {
+                        const [horas, minutos] =
+                            configuracoes.reminderTime.split(':').map(Number);
+
+                        const horario = new Date();
+                        horario.setHours(horas, minutos, 0, 0);
+
+                        setHorarioSelecionado(horario);
+                    }
+                }
+            } catch (erro) {
+                console.error('Erro ao carregar objetivo:', erro);
+
+                Alert.alert(
+                    'Erro',
+                    'Não foi possível carregar suas configurações de hidratação.'
+                );
+            }
+        }
+
+        carregarObjetivo();
+    }, []);
 
     const objetivo = Number(objetivoTexto.replace(',', '.')) * 1000;
 
@@ -67,7 +136,7 @@ export default function ObjetivoHidratacao() {
         }
     }
 
-    function salvarConfiguracoes() {
+    async function salvarConfiguracoes() {
         if (
             !objetivoTexto ||
             !Number.isFinite(objetivo) ||
@@ -80,8 +149,55 @@ export default function ObjetivoHidratacao() {
             return;
         }
 
-       router.back();
-        
+        const usuario = auth.currentUser;
+
+        if (!usuario) {
+            Alert.alert(
+                'Atenção',
+                'Você precisa estar conectado para salvar suas configurações.'
+            );
+            return;
+        }
+
+        try {
+            const objetivoRef = doc(
+                db,
+                'users',
+                usuario.uid,
+                'waterObjectives',
+                'objective'
+            );
+
+            const horarioFormatado = horarioSelecionado.toLocaleTimeString(
+                'pt-BR',
+                {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                }
+            );
+
+            await setDoc(
+                objetivoRef,
+                {
+                    dailyGoalMl: Math.round(objetivo),
+                    notificationsEnabled: notificacao,
+                    reminderTime: horarioFormatado,
+                    updatedAt: serverTimestamp(),
+                },
+                { merge: true }
+            );
+
+            router.back();
+
+        } catch (erro) {
+            console.error('Erro ao salvar objetivo:', erro);
+
+            Alert.alert(
+                'Erro',
+                'Não foi possível salvar suas configurações. Tente novamente.'
+            );
+        }
     }
 
     const horarioFormatado = horarioSelecionado.toLocaleTimeString(
@@ -149,7 +265,7 @@ export default function ObjetivoHidratacao() {
                     </View>
 
                     <View style={styles.selectedGoal}>
-                    
+
                         <View style={styles.goalInputRow}>
                             <TextInput
                                 value={objetivoTexto}
@@ -186,14 +302,14 @@ export default function ObjetivoHidratacao() {
                                     style={[
                                         styles.goalButton,
                                         selecionado &&
-                                            styles.goalButtonActive,
+                                        styles.goalButtonActive,
                                     ]}
                                 >
                                     <Text
                                         style={[
                                             styles.goalButtonText,
                                             selecionado &&
-                                                styles.goalButtonTextActive,
+                                            styles.goalButtonTextActive,
                                         ]}
                                     >
                                         {formatarLitros(valor)} L
@@ -450,17 +566,17 @@ const styles = StyleSheet.create({
     },
 
     selectedGoalInput: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: DARK_BLUE,
-    minWidth: 45,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    backgroundColor: WHITE,
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 10,
-},
+        fontSize: 32,
+        fontWeight: '800',
+        color: DARK_BLUE,
+        minWidth: 45,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        backgroundColor: WHITE,
+        borderWidth: 1,
+        borderColor: BORDER,
+        borderRadius: 10,
+    },
 
     goalUnit: {
         fontSize: 25,

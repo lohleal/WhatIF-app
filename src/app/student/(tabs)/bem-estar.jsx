@@ -8,6 +8,16 @@ import {
     View,
 } from 'react-native';
 
+import { useEffect, useState } from 'react';
+
+import { auth, db } from '../../../services/firebase/firebaseConfig';
+
+import {
+    collection,
+    doc,
+    onSnapshot,
+} from 'firebase/firestore';
+
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +27,74 @@ import WellbeingCard from '../../../features/indicators/components/wellbeingCard
 
 export default function BemEstar() {
     const router = useRouter();
+
+    const [aguaHoje, setAguaHoje] = useState(0);
+    const [objetivoAgua, setObjetivoAgua] = useState(2000);
+
+    useEffect(() => {
+        const usuario = auth.currentUser;
+
+        if (!usuario) return;
+
+        // Buscar objetivo diário
+        const objetivoRef = doc(
+            db,
+            'users',
+            usuario.uid,
+            'waterObjectives',
+            'objective'
+        );
+
+        const unsubscribeObjetivo = onSnapshot(
+            objetivoRef,
+            (snapshot) => {
+                if (snapshot.exists()) {
+                    const dados = snapshot.data();
+
+                    if (dados.dailyGoalMl > 0) {
+                        setObjetivoAgua(dados.dailyGoalMl);
+                    }
+                }
+            },
+            (erro) => console.error('Erro ao buscar objetivo:', erro)
+        );
+
+        // Buscar registros de água
+        const registrosRef = collection(
+            db,
+            'users',
+            usuario.uid,
+            'waterRecords'
+        );
+
+        const unsubscribeRegistros = onSnapshot(
+            registrosRef,
+            (snapshot) => {
+                const hoje = new Date();
+                const ano = hoje.getFullYear();
+                const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+                const dia = String(hoje.getDate()).padStart(2, '0');
+
+                const hojeKey = `${ano}-${mes}-${dia}`;
+
+                const total = snapshot.docs
+                    .filter((documento) => {
+                        return documento.data().dateKey === hojeKey;
+                    })
+                    .reduce((soma, documento) => {
+                        return soma + (documento.data().amountMl || 0);
+                    }, 0);
+
+                setAguaHoje(total);
+            },
+            (erro) => console.error('Erro ao buscar água:', erro)
+        );
+
+        return () => {
+            unsubscribeObjetivo();
+            unsubscribeRegistros();
+        };
+    }, []);
 
     const { width, height } = useWindowDimensions();
 
@@ -31,6 +109,12 @@ export default function BemEstar() {
     const cardWidth = contentWidth * 0.48;
 
     const cardHeight = compactScreen ? 208 : 225;
+
+    const formatarLitros = (ml) => {
+        return (ml / 1000).toLocaleString('pt-BR', {
+            maximumFractionDigits: 2,
+        });
+    };
 
     return (
         <ImageBackground
@@ -88,7 +172,7 @@ export default function BemEstar() {
                             width={cardWidth}
                             height={cardHeight}
                             title="Água"
-                            subtitle="1,5L/2L"
+                            subtitle={`${formatarLitros(aguaHoje)}L/${formatarLitros(objetivoAgua)}L`}
                             iconName="water"
                             iconColor="#48A9B6"
                             backgroundColor="#EAF7FC"
@@ -175,7 +259,7 @@ export default function BemEstar() {
                             iconName="book-open-page-variant-outline"
                             iconColor="#7DA55C"
                             backgroundColor="#F0F7E9"
-                             waveColor="#CDE9C2"
+                            waveColor="#CDE9C2"
                             onPress={() =>
                                 router.push('/student/wellbeing/estudo')
                             }

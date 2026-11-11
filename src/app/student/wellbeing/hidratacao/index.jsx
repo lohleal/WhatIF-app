@@ -1,5 +1,15 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { auth, db } from '../../../../services/firebase/firebaseConfig';
+
+import {
+    collection,
+    doc,
+    onSnapshot,
+    orderBy,
+    query,
+} from 'firebase/firestore';
 
 import {
     Pressable,
@@ -13,6 +23,109 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Hidratacao() {
     const router = useRouter();
+    const [consumoHoje, setConsumoHoje] = useState(0);
+    const [objetivoDiario, setObjetivoDiario] = useState(2000);
+    const [ultimaIngestao, setUltimaIngestao] = useState(null);
+
+    const hoje = new Date();
+
+    const hojeKey = [
+        hoje.getFullYear(),
+        String(hoje.getMonth() + 1).padStart(2, '0'),
+        String(hoje.getDate()).padStart(2, '0'),
+    ].join('-');
+
+    const progresso = objetivoDiario > 0
+        ? Math.min((consumoHoje / objetivoDiario) * 100, 100)
+        : 0;
+
+    useEffect(() => {
+        const usuario = auth.currentUser;
+
+        if (!usuario) return;
+
+        // Buscar objetivo diário
+        const objetivoRef = doc(
+            db,
+            'users',
+            usuario.uid,
+            'waterObjectives',
+            'objective'
+        );
+
+        const unsubscribeObjetivo = onSnapshot(
+            objetivoRef,
+            (snapshot) => {
+                if (snapshot.exists()) {
+                    const dados = snapshot.data();
+
+                    if (
+                        Number.isFinite(dados.dailyGoalMl) &&
+                        dados.dailyGoalMl > 0
+                    ) {
+                        setObjetivoDiario(dados.dailyGoalMl);
+                    }
+                }
+            },
+            (erro) => console.error('Erro ao buscar objetivo:', erro)
+        );
+
+        // Buscar registros de água
+        const registrosRef = collection(
+            db,
+            'users',
+            usuario.uid,
+            'waterRecords'
+        );
+
+        const consulta = query(
+            registrosRef,
+            orderBy('consumedAt', 'desc')
+        );
+
+        const unsubscribeRegistros = onSnapshot(
+            consulta,
+            (snapshot) => {
+                const registros = snapshot.docs.map((documento) => ({
+                    ...documento.data(),
+                    id: documento.id,
+                }));
+
+                const registrosHoje = registros.filter(
+                    (registro) => registro.dateKey === hojeKey
+                );
+
+                const total = registrosHoje.reduce(
+                    (soma, registro) => soma + (registro.amountMl || 0),
+                    0
+                );
+
+                setConsumoHoje(total);
+
+                if (registrosHoje.length > 0) {
+                    const ultimo = registrosHoje[0];
+
+                    setUltimaIngestao({
+                        ml: ultimo.amountMl,
+                        horario: ultimo.consumedAt
+                            ?.toDate()
+                            .toLocaleTimeString('pt-BR', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                            }),
+                    });
+                } else {
+                    setUltimaIngestao(null);
+                }
+            },
+            (erro) => console.error('Erro ao buscar registros:', erro)
+        );
+
+        return () => {
+            unsubscribeObjetivo();
+            unsubscribeRegistros();
+        };
+    }, [hojeKey]);
 
     const { width, height } = useWindowDimensions();
 
@@ -97,7 +210,7 @@ export default function Hidratacao() {
                     </View>
 
                     <Text style={styles.amount}>
-                        1200ml / 2000ml
+                        {consumoHoje.toLocaleString('pt-BR')}ml / {objetivoDiario.toLocaleString('pt-BR')}ml
                     </Text>
 
                     <Text style={styles.encouragement}>
@@ -140,7 +253,9 @@ export default function Hidratacao() {
                             </Text>
 
                             <Text style={styles.cardSubtitle}>
-                                09:30 - 300ml
+                                {ultimaIngestao
+                                    ? `${ultimaIngestao.horario} - ${ultimaIngestao.ml}ml`
+                                    : 'Nenhum consumo registrado hoje'}
                             </Text>
                         </View>
                     </View>
@@ -197,9 +312,10 @@ export default function Hidratacao() {
                                 }
                             >
                                 <View
-                                    style={
-                                        styles.progressBar
-                                    }
+                                    style={[
+                                        styles.progressBar,
+                                        { width: `${progresso}%` },
+                                    ]}
                                 />
                             </View>
                         </View>
@@ -241,7 +357,7 @@ export default function Hidratacao() {
                                         styles.cardTitle
                                     }
                                 >
-                                    Histórico 
+                                    Histórico
                                 </Text>
 
                                 <MaterialCommunityIcons
