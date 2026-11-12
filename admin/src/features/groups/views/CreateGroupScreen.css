@@ -1,0 +1,240 @@
+
+.create-group-screen {
+  width: 100%;
+  min-height: 100vh;
+  color: #34495B;
+}
+
+.create-group-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.create-group-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  color: #7098BC;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  margin-bottom: 22px;
+}
+
+.create-group-heading {
+  margin-bottom: 25px;
+}
+
+.create-group-heading h1 {
+  font-size: 27px;
+  margin: 7px 0;
+  font-weight: 750;
+}
+
+.create-group-heading p {
+  font-size: 13px;
+  color: #8996A3;
+  margin: 0;
+}
+
+.create-group-form {
+  max-width: 900px;
+}
+
+.create-group-panel {
+  background: #FFFFFF;
+  border: 1px solid #EDF0F4;
+  border-radius: 13px;
+  padding: 24px;
+  margin-bottom: 19px;
+  box-shadow: 0 2px 8px rgba(35, 61, 86, 0.025);
+}
+
+.create-group-section-title {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 24px;
+}
+
+.create-group-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #EDF5FC;
+  color: #5489B9;
+  flex-shrink: 0;
+}
+
+.create-group-icon.green {
+  background: #EDF7F1;
+  color: #5B9A7C;
+}
+
+.create-group-section-title h2 {
+  margin: 0 0 5px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.create-group-section-title p {
+  margin: 0;
+  font-size: 11px;
+  color: #929EAA;
+}
+
+.create-group-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: 19px;
+}
+
+.create-group-field:last-child {
+  margin-bottom: 0;
+}
+
+.create-group-field label {
+  font-size: 12px;
+  font-weight: 650;
+  color: #526577;
+}
+
+.create-group-field input,
+.create-group-field textarea,
+.create-group-field select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 13px;
+  border: 1px solid #E5EAF0;
+  border-radius: 8px;
+  background: #FAFBFD;
+  color: #34495B;
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+  transition: border 0.2s;
+}
+
+.create-group-field input:focus,
+.create-group-field textarea:focus,
+.create-group-field select:focus {
+  border-color: #78A3C9;
+}
+
+.create-group-field textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.create-group-workshop {
+  padding: 17px;
+  border: 1px solid #EDF0F4;
+  border-radius: 10px;
+  background: #FCFDFE;
+  margin-bottom: 13px;
+}
+
+.create-group-workshop-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 17px;
+}
+
+.create-group-workshop-heading strong {
+  font-size: 12px;
+  color: #405365;
+}
+
+.create-group-remove {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  color: #C17C7C;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.create-group-schedule-fields {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 14px;
+}
+
+.create-group-add {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 0;
+  border: none;
+  background: transparent;
+  color: #5489B9;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.create-group-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.create-group-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 11px;
+  padding-bottom: 25px;
+}
+
+.create-group-cancel,
+.create-group-submit {
+  padding: 11px 19px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.create-group-cancel {
+  border: 1px solid #E5EAF0;
+  background: #FFFFFF;
+  color: #778695;
+}
+
+.create-group-submit {
+  border: none;
+  background: #5489B9;
+  color: #FFFFFF;
+}
+
+.create-group-submit:hover {
+  background: #416F9B;
+}
+
+@media (max-width: 650px) {
+  .create-group-panel {
+    padding: 17px;
+  }
+
+  .create-group-schedule-fields {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .create-group-actions {
+    flex-direction: column-reverse;
+  }
+
+  .create-group-actions button {
+    width: 100%;
+  }
+}

@@ -1,0 +1,92 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // USUÁRIOS
+    match /users/{userId} {
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && request.resource.data.keys().hasAll([
+                      'nome',
+                      'email',
+                      'grupoId',
+                      'criadoEm'
+                    ])
+                    && request.resource.data.nome is string
+                    && request.resource.data.email == request.auth.token.email
+                    && request.resource.data.grupoId == null
+                    && request.resource.data.criadoEm == request.time;
+
+      allow read: if request.auth != null
+                  && request.auth.uid == userId;
+
+      allow update: if request.auth != null
+                    && request.auth.uid == userId
+                    && request.resource.data.diff(resource.data)
+                        .affectedKeys()
+                        .hasOnly(['quickShortcuts']);
+
+      allow delete: if false;
+
+      // REGISTROS DE ÁGUA
+      match /waterRecords/{recordId} {
+        allow read, create, update, delete:
+          if request.auth != null
+          && request.auth.uid == userId;
+      }
+
+      // OBJETIVOS DE HIDRATAÇÃO
+match /waterObjectives/{objectiveId} {
+  allow read, create, update:
+    if request.auth != null
+    && request.auth.uid == userId;
+
+  allow delete: if false;
+}
+    }
+
+    // INDICADORES
+    match /indicators/{indicatorId} {
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+
+      allow read: if request.auth != null
+                  && resource.data.userId == request.auth.uid;
+
+      allow update: if request.auth != null
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.userId == resource.data.userId;
+
+      allow delete: if request.auth != null
+                    && resource.data.userId == request.auth.uid;
+    }
+    
+    // GRUPOS
+    
+    // GRUPOS
+    match /groups/{groupId} {
+
+      // Permite consultar grupos ativos, inclusive no cadastro
+      allow read: if resource.data.active == true;
+
+      // Somente administradores autorizados podem cadastrar
+      allow create: if request.auth != null
+                    && request.auth.token.admin == true
+                    && request.resource.data.keys().hasAll([
+                      'name',
+                      'description',
+                      'workshops',
+                      'active',
+                      'createdAt'
+                    ])
+                    && request.resource.data.active == true;
+
+      // Somente administradores autorizados podem editar e excluir
+      allow update, delete: if request.auth != null
+                            && request.auth.token.admin == true;
+    }
+
+
+  }
+}

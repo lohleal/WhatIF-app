@@ -26,3 +26,12 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+
+# Credenciais Firebase
+serviceAccountKey.json
+**/serviceAccountKey.json
+
+# Arquivos de ambiente
+.env
+.env.*
+!.env.example
