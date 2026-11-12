@@ -61,6 +61,18 @@
   color: var(--color-primary);
 }
 
+
+.header-logout {
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.header-logout:hover {
+  color: #C75B5B;
+  transform: translateX(2px);
+}
+
+
 @media (max-width: 600px) {
   .admin-header {
     gap: 12px;

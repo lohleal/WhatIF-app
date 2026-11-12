@@ -95,8 +95,6 @@ export default function CreateGroupScreen() {
                 workshops,
             });
 
-            alert('Grupo cadastrado com sucesso!');
-
             navigate('/groups');
         } catch (error) {
             console.error('Erro ao cadastrar grupo:', error);
