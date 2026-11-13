@@ -4,8 +4,8 @@ import {
   collection,
   getDocs,
   query,
-  where,
   serverTimestamp,
+  where,
 } from 'firebase/firestore';
 
 import { db } from '../../../services/firebase/firebaseConfig';
@@ -17,7 +17,7 @@ export async function createGroup(groupData) {
   const group = {
     name: groupData.name.trim(),
     description: groupData.description.trim(),
-    workshops: groupData.workshops,
+    schedule: groupData.schedule,
     active: true,
     createdAt: serverTimestamp(),
   };

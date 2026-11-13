@@ -1,0 +1,279 @@
+
+.workshops-screen {
+  width: 100%;
+}
+
+.workshops-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.workshops-header h1 {
+  margin: 0 0 8px;
+  font-size: 26px;
+}
+
+.workshops-header p {
+  margin: 0;
+  color: #777;
+  font-size: 14px;
+}
+
+/* Abas */
+
+.workshops-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid #e5e5e5;
+  margin-bottom: 24px;
+}
+
+.workshops-tabs button {
+  border: none;
+  background: transparent;
+  padding: 12px 4px;
+  color: #777;
+  font-size: 15px;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+}
+
+.workshops-tabs button.active {
+  color: #43503e;
+  border-bottom-color: #43503e;
+  font-weight: 600;
+}
+
+.workshops-content {
+  width: 100%;
+}
+
+/* Calendário */
+
+.workshops-calendar {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 18px;
+  max-width: 1100px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.calendar-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.calendar-month-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #43503e;
+}
+
+.calendar-month-title h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #333;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.calendar-navigation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-navigation button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.calendar-navigation button:hover {
+  background: #f4f5f2;
+}
+
+.calendar-navigation .calendar-today-button {
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #43503e;
+}
+
+/* Grade mensal */
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-rows: 38px;
+  grid-auto-rows: minmax(100px, auto);
+  border-top: 1px solid #e8e8e8;
+  border-left: 1px solid #e8e8e8;
+  align-items: stretch;
+}
+
+.calendar-weekday {
+  height: 38px;
+  box-sizing: border-box;
+  padding: 8px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #777;
+  background: #f8f9f7;
+  border-right: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.calendar-day {
+  min-width: 0;
+  min-height: 100px;
+  height: auto;
+  box-sizing: border-box;
+  padding: 7px;
+  background: #fff;
+  border-right: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.calendar-day.outside-month {
+  background: #fafafa;
+}
+
+.calendar-day.outside-month .calendar-day-number {
+  color: #bbb;
+}
+
+.calendar-day-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 27px;
+  margin-bottom: 5px;
+  font-size: 13px;
+  color: #444;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.calendar-day.today .calendar-day-number {
+  background: #43503e;
+  color: #fff;
+  font-weight: 600;
+}
+
+.calendar-day-meetings {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Encontros dos grupos */
+
+.calendar-meeting {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 5px 6px;
+  background: #edf1e9;
+  border-left: 3px solid #43503e;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+.calendar-meeting strong {
+  color: #43503e;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.calendar-meeting span {
+  color: #666;
+  font-size: 10px;
+}
+
+/* Mensagens */
+
+.calendar-message {
+  padding: 28px 12px;
+  text-align: center;
+  color: #777;
+  font-size: 14px;
+}
+
+.calendar-error {
+  color: #b42318;
+}
+
+/* Catálogo */
+
+.workshops-placeholder {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 28px;
+  min-height: 250px;
+}
+
+.workshops-placeholder h2 {
+  margin-top: 0;
+  font-size: 19px;
+}
+
+.workshops-placeholder p {
+  color: #777;
+  line-height: 1.6;
+  max-width: 600px;
+}
+
+/* Responsividade */
+
+@media (max-width: 900px) {
+  .calendar-day {
+    padding: 5px;
+  }
+
+  .calendar-meeting {
+    padding: 5px;
+  }
+
+  .calendar-meeting strong {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .workshops-calendar {
+    padding: 12px;
+    overflow-x: auto;
+  }
+
+  .calendar-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .calendar-grid {
+    min-width: 650px;
+  }
+}

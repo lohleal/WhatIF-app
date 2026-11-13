@@ -1,5 +1,6 @@
 
 import {
+  BookOpen,
   ChartNoAxesCombined,
   Layers,
   LayoutDashboard,
@@ -26,6 +27,11 @@ const menuItems = [
     label: 'Grupos',
     path: '/groups',
     icon: Layers,
+  },
+  {
+    label: 'Oficinas',
+    path: '/workshops',
+    icon: BookOpen,
   },
   {
     label: 'Relatórios',

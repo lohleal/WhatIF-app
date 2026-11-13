@@ -76,7 +76,7 @@ match /waterObjectives/{objectiveId} {
                     && request.resource.data.keys().hasAll([
                       'name',
                       'description',
-                      'workshops',
+                      'schedule',
                       'active',
                       'createdAt'
                     ])
@@ -89,4 +89,19 @@ match /waterObjectives/{objectiveId} {
 
 
   }
+  
+    // CATÁLOGO DE OFICINAS
+    match /workshopCatalog/{workshopId} {
+      allow read, create, update, delete:
+        if request.auth != null
+        && request.auth.token.admin == true;
+    }
+
+    // CATEGORIAS DAS OFICINAS
+    match /workshopCategories/{categoryId} {
+      allow read, create, update, delete:
+        if request.auth != null
+        && request.auth.token.admin == true;
+    }
+
 }

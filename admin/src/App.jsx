@@ -1,13 +1,14 @@
 
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
-import GroupsScreen from './features/groups/views/GroupsScreen';
-import CreateGroupScreen from './features/groups/views/CreateGroupScreen';
 import DashboardScreen from './features/dashboard/views/DashboardScreen';
+import CreateGroupScreen from './features/groups/views/CreateGroupScreen';
+import GroupsScreen from './features/groups/views/GroupsScreen';
+import WorkshopsScreen from './features/workshops/views/WorkshopsScreen';
 import AdminLayout from './shared/components/Layout/AdminLayout';
 
-import { AuthProvider } from './features/auth/contexts/AuthContext';
 import ProtectedRoute from './features/auth/components/ProtectedRoute';
+import { AuthProvider } from './features/auth/contexts/AuthContext';
 import LoginScreen from './features/auth/views/LoginScreen';
 
 function ComingSoon({ title }) {
@@ -35,6 +36,7 @@ function App() {
               <Route path="students" element={<ComingSoon title="Estudantes" />} />
               <Route path="groups" element={<GroupsScreen />} />
               <Route path="groups/create" element={<CreateGroupScreen />} />
+              <Route path="workshops" element={<WorkshopsScreen />} />
               <Route path="reports" element={<ComingSoon title="Relatórios" />} />
               <Route path="settings" element={<ComingSoon title="Configurações" />} />
             </Route>
