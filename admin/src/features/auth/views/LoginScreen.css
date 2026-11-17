@@ -29,6 +29,13 @@
   margin-bottom: 38px;
 }
 
+.login-brand-image {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
 .login-brand-icon {
   width: 42px;
   height: 42px;

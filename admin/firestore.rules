@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -37,13 +38,13 @@ service cloud.firestore {
       }
 
       // OBJETIVOS DE HIDRATAÇÃO
-match /waterObjectives/{objectiveId} {
-  allow read, create, update:
-    if request.auth != null
-    && request.auth.uid == userId;
+      match /waterObjectives/{objectiveId} {
+        allow read, create, update:
+          if request.auth != null
+          && request.auth.uid == userId;
 
-  allow delete: if false;
-}
+        allow delete: if false;
+      }
     }
 
     // INDICADORES
@@ -61,13 +62,11 @@ match /waterObjectives/{objectiveId} {
       allow delete: if request.auth != null
                     && resource.data.userId == request.auth.uid;
     }
-    
-    // GRUPOS
-    
+
     // GRUPOS
     match /groups/{groupId} {
 
-      // Permite consultar grupos ativos, inclusive no cadastro
+      // Permite consultar grupos ativos
       allow read: if resource.data.active == true;
 
       // Somente administradores autorizados podem cadastrar
@@ -87,9 +86,6 @@ match /waterObjectives/{objectiveId} {
                             && request.auth.token.admin == true;
     }
 
-
-  }
-  
     // CATÁLOGO DE OFICINAS
     match /workshopCatalog/{workshopId} {
       allow read, create, update, delete:
@@ -104,4 +100,5 @@ match /waterObjectives/{objectiveId} {
         && request.auth.token.admin == true;
     }
 
+  }
 }

@@ -197,7 +197,7 @@ export default function CreateGroupScreen() {
                                             Remover
                                         </button>
                                     )}
-                                </div>
+                                </div>  
 
                                 <div className="create-group-schedule-fields">
                                     <div className="create-group-field">

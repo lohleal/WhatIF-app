@@ -2,9 +2,12 @@
 import {
   addDoc,
   collection,
+  doc,
+  getDoc,
   getDocs,
   query,
   serverTimestamp,
+  updateDoc,
   where,
 } from 'firebase/firestore';
 
@@ -53,4 +56,31 @@ export async function getActiveGroups() {
     id: document.id,
     ...document.data(),
   }));
+}
+
+// Buscar um grupo pelo ID
+export async function getGroupById(id) {
+  const groupRef = doc(db, 'groups', id);
+  const snapshot = await getDoc(groupRef);
+
+  if (!snapshot.exists()) {
+    throw new Error('Grupo não encontrado.');
+  }
+
+  return {
+    id: snapshot.id,
+    ...snapshot.data(),
+  };
+}
+
+// Atualizar um grupo
+export async function updateGroup(id, groupData) {
+  const groupRef = doc(db, 'groups', id);
+
+  await updateDoc(groupRef, {
+    name: groupData.name.trim(),
+    description: groupData.description.trim(),
+    schedule: groupData.schedule,
+    updatedAt: serverTimestamp(),
+  });
 }

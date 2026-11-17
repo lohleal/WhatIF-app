@@ -61,7 +61,7 @@
 /* CARDS DE RESUMO */
 .groups-stats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 20px;
 }
@@ -387,6 +387,32 @@
   justify-content: space-between;
   padding: 10px 3px 20px;
   color: #A1ACB6;
+  font-size: 10px;
+}
+
+/* DIAS E HORÁRIOS DOS GRUPOS */
+
+.groups-schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 170px;
+}
+
+.groups-schedule-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.groups-schedule-item span {
+  color: #405365;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.groups-schedule-item small {
+  color: #8996A3;
   font-size: 10px;
 }
 

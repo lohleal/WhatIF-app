@@ -1,11 +1,12 @@
 
-import { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { useState } from 'react';
 
 import { auth } from '../../../services/firebase/firebaseConfig';
 import { useAuth } from '../contexts/AuthContext';
 
+import WhatIFicon from '../../../assets/WhatIFicon.png';
 import './LoginScreen.css';
 
 export default function LoginScreen() {
@@ -77,7 +78,11 @@ export default function LoginScreen() {
     <main className="login-page">
       <section className="login-card">
         <div className="login-brand">
-          <div className="login-brand-icon">W</div>
+          <img
+            src={WhatIFicon}
+            alt="Logo WHAT IF APP"
+            className="login-brand-image"
+          />
           <span>WHAT IF APP</span>
         </div>
 
