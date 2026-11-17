@@ -20,17 +20,18 @@ import {
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { doc, getDoc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
 import { COLORS } from '../../../constants/colors.js';
 import IndicatorCard from '../../../features/indicators/components/indicatorCard.jsx';
 import {
     atualizarIndicador,
     concluirIndicador,
     excluirIndicador,
+    registrarProgresso,
 } from '../../../features/indicators/services/indicatorService.js';
 import useIndicatorsViewModel from '../../../features/indicators/viewmodels/use-indicators-view-model.js';
 import { auth, db } from '../../../services/firebase/firebaseConfig';
-import { doc, getDoc } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
 
 export default function Indicadores() {
 
@@ -88,6 +89,19 @@ export default function Indicadores() {
     const [editUnit, setEditUnit] = useState('');
     const [saving, setSaving] = useState(false);
     const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+    const [progressAmount, setProgressAmount] = useState('');
+
+    useEffect(() => {
+        if (!selectedIndicator || isEditing) return;
+
+        const indicadorAtualizado = indicators.find(
+            (item) => item.id === selectedIndicator.id
+        );
+
+        if (indicadorAtualizado) {
+            setSelectedIndicator(indicadorAtualizado);
+        }
+    }, [indicators, selectedIndicator?.id, isEditing]);
 
     useEffect(() => {
         async function loadStudentName() {
@@ -116,6 +130,7 @@ export default function Indicadores() {
 
     function handleIndicatorPress(indicator) {
         setSelectedIndicator(indicator);
+        setProgressAmount('');
         setEditName(indicator.name || '');
         setEditDescription(indicator.description || '');
         setEditTarget(
@@ -140,15 +155,54 @@ export default function Indicadores() {
 
         try {
             setSaving(true);
-            await concluirIndicador(
-                selectedIndicator.id,
-                selectedIndicator.target
-            );
+            await concluirIndicador(selectedIndicator.id);
             Alert.alert('Muito bem!', 'Indicador concluído com sucesso!');
             closeIndicatorModal();
         } catch (error) {
             console.error('Erro ao concluir indicador:', error);
             Alert.alert('Erro', 'Não foi possível concluir o indicador.');
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    async function handleRegisterProgress() {
+        if (!selectedIndicator || saving) return;
+
+        const quantidade = Number(
+            progressAmount.replace(',', '.')
+        );
+
+        if (!progressAmount.trim() || !Number.isFinite(quantidade) || quantidade <= 0) {
+            Alert.alert(
+                'Atenção',
+                'Informe uma quantidade válida para registrar.'
+            );
+            return;
+        }
+
+        try {
+            setSaving(true);
+
+            await registrarProgresso(
+                selectedIndicator.id,
+                quantidade
+            );
+
+            setProgressAmount('');
+
+            Alert.alert(
+                'Progresso registrado!',
+                'Sua atividade foi adicionada ao histórico.'
+            );
+
+        } catch (error) {
+            console.error('Erro ao registrar progresso:', error);
+
+            Alert.alert(
+                'Erro',
+                error.message || 'Não foi possível registrar seu progresso.'
+            );
         } finally {
             setSaving(false);
         }
@@ -628,17 +682,61 @@ export default function Indicadores() {
                                                     )}
                                                 </View>
 
-                                                {!selectedIndicator.completed && (
-                                                    <Pressable
-                                                        style={[styles.primaryModalButton, saving && styles.disabledButton]}
-                                                        onPress={handleCompleteIndicator}
-                                                        disabled={saving}
-                                                    >
-                                                        <MaterialCommunityIcons name="check-circle-outline" size={21} color="#FFFFFF" />
-                                                        <Text style={styles.primaryModalButtonText}>
-                                                            {saving ? 'Concluindo...' : 'Marcar como concluído'}
+                                                {selectedIndicator.type === 'conclusao' ? (
+                                                    !selectedIndicator.completed && (
+                                                        <Pressable
+                                                            style={[
+                                                                styles.primaryModalButton,
+                                                                saving && styles.disabledButton
+                                                            ]}
+                                                            onPress={handleCompleteIndicator}
+                                                            disabled={saving}
+                                                        >
+                                                            <MaterialCommunityIcons
+                                                                name="check-circle-outline"
+                                                                size={21}
+                                                                color="#FFFFFF"
+                                                            />
+
+                                                            <Text style={styles.primaryModalButtonText}>
+                                                                {saving ? 'Concluindo...' : 'Marcar como concluído'}
+                                                            </Text>
+                                                        </Pressable>
+                                                    )
+                                                ) : (
+                                                    <View style={styles.progressRegisterContainer}>
+                                                        <Text style={styles.fieldLabel}>
+                                                            Registrar progresso ({selectedIndicator.unit || 'quantidade'})
                                                         </Text>
-                                                    </Pressable>
+
+                                                        <TextInput
+                                                            style={styles.modalInput}
+                                                            value={progressAmount}
+                                                            onChangeText={setProgressAmount}
+                                                            placeholder="Informe quanto você realizou"
+                                                            placeholderTextColor="#999999"
+                                                            keyboardType="decimal-pad"
+                                                        />
+
+                                                        <Pressable
+                                                            style={[
+                                                                styles.primaryModalButton,
+                                                                saving && styles.disabledButton
+                                                            ]}
+                                                            onPress={handleRegisterProgress}
+                                                            disabled={saving}
+                                                        >
+                                                            <MaterialCommunityIcons
+                                                                name="plus-circle-outline"
+                                                                size={21}
+                                                                color="#FFFFFF"
+                                                            />
+
+                                                            <Text style={styles.primaryModalButtonText}>
+                                                                {saving ? 'Registrando...' : 'Registrar progresso'}
+                                                            </Text>
+                                                        </Pressable>
+                                                    </View>
                                                 )}
 
                                                 <View style={styles.actionRow}>
@@ -723,6 +821,11 @@ export default function Indicadores() {
 }
 
 const styles = StyleSheet.create({
+    progressRegisterContainer: {
+        marginTop: 8,
+        marginBottom: 8,
+    },
+
     background: {
         flex: 1,
     },

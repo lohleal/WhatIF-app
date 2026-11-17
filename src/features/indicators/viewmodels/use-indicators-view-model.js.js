@@ -39,7 +39,7 @@ const INDICATOR_STYLES = [
     },
 ];
 
-// Escolhe um estilo de acordo com o tipo ou nome do indicador
+// Escolher estilo de acordo com o tipo ou nome
 function getIndicatorStyle(indicator, index) {
     const text = `${indicator.type ?? ''} ${indicator.name ?? ''}`
         .toLowerCase()
@@ -83,6 +83,7 @@ function getIndicatorStyle(indicator, index) {
     return INDICATOR_STYLES[index % INDICATOR_STYLES.length];
 }
 
+// Formatar a meta do indicador
 function formatIndicatorValue(indicator) {
     const type = (indicator.type ?? '').toLowerCase();
 
@@ -107,12 +108,17 @@ export default function useIndicatorsViewModel() {
 
     useEffect(() => {
         let unsubscribeIndicators;
+        const unsubscribeProgress = new Map();
 
         const unsubscribeAuth = onAuthStateChanged(auth, (usuario) => {
+            // Encerrar escutas anteriores
             if (unsubscribeIndicators) {
                 unsubscribeIndicators();
                 unsubscribeIndicators = undefined;
             }
+
+            unsubscribeProgress.forEach((unsubscribe) => unsubscribe());
+            unsubscribeProgress.clear();
 
             if (!usuario) {
                 setIndicators([]);
@@ -132,63 +138,168 @@ export default function useIndicatorsViewModel() {
             unsubscribeIndicators = onSnapshot(
                 consulta,
                 (snapshot) => {
-                    const dados = snapshot.docs.map((documento, index) => {
-                        const indicador = documento.data();
+                    // Considerar apenas indicadores não arquivados
+                    const documentosAtivos = snapshot.docs.filter(
+                        (documento) => documento.data().active !== false
+                    );
 
-                        // Estilo antigo usado apenas como alternativa
-                        const visual = getIndicatorStyle(indicador, index);
+                    const idsAtivos = new Set(
+                        documentosAtivos.map((documento) => documento.id)
+                    );
 
-                        return {
-                            ...indicador,
-
-                            id: documento.id,
-
-                            title:
-                                indicador.name ??
-                                'Indicador sem nome',
-
-                            description:
-                                indicador.description ?? '',
-
-                            target: indicador.target ?? null,
-
-                            currentValue:
-                                indicador.currentValue ?? 0,
-
-                            unit: indicador.unit ?? '',
-
-                            frequency:
-                                indicador.frequency ?? '',
-
-                            selectedDays:
-                                indicador.selectedDays ?? [],
-
-                            completed:
-                                indicador.completed ?? false,
-
-                            value: formatIndicatorValue(indicador),
-
-                            // Prioriza as escolhas salvas pelo estudante
-                            iconName:
-                                indicador.iconName ?? visual.iconName,
-
-                            iconColor:
-                                indicador.iconColor ?? visual.iconColor,
-
-                            backgroundColor:
-                                indicador.backgroundColor ?? visual.backgroundColor,
-                        };
+                    // Encerrar escutas de indicadores removidos ou arquivados
+                    unsubscribeProgress.forEach((unsubscribe, id) => {
+                        if (!idsAtivos.has(id)) {
+                            unsubscribe();
+                            unsubscribeProgress.delete(id);
+                        }
                     });
+
+                    const dados = documentosAtivos.map(
+                        (documento, index) => {
+                            const indicador = documento.data();
+                            const visual = getIndicatorStyle(
+                                indicador,
+                                index
+                            );
+
+                            const currentValue = Number(
+                                indicador.currentValue ?? 0
+                            );
+
+                            const completed = indicador.type === 'conclusao'
+                                ? Boolean(indicador.completed)
+                                : indicador.target != null &&
+                                  currentValue >= Number(indicador.target);
+
+                            return {
+                                ...indicador,
+                                id: documento.id,
+
+                                title: indicador.name ?? 'Indicador sem nome',
+                                description: indicador.description ?? '',
+
+                                target: indicador.target ?? null,
+                                currentValue,
+                                unit: indicador.unit ?? '',
+
+                                frequency: indicador.frequency ?? '',
+                                selectedDays: indicador.selectedDays ?? [],
+
+                                completed,
+
+                                value: formatIndicatorValue({
+                                    ...indicador,
+                                    completed,
+                                }),
+
+                                progressLabel:
+                                    indicador.type === 'conclusao'
+                                        ? (completed ? 'Concluído' : 'Não concluído')
+                                        : `${currentValue} / ${indicador.target ?? 0} ${indicador.unit ?? ''}`.trim(),
+
+                                iconName:
+                                    indicador.iconName ?? visual.iconName,
+
+                                iconColor:
+                                    indicador.iconColor ?? visual.iconColor,
+
+                                backgroundColor:
+                                    indicador.backgroundColor ??
+                                    visual.backgroundColor,
+                            };
+                        }
+                    );
 
                     setIndicators(dados);
                     setLoading(false);
                     setError(null);
+
+                    // Criar uma escuta para o histórico de cada indicador
+                    documentosAtivos.forEach((documento) => {
+                        const id = documento.id;
+
+                        // Evitar criar escutas duplicadas
+                        if (unsubscribeProgress.has(id)) {
+                            return;
+                        }
+
+                        const referenciaHistorico = collection(
+                            db,
+                            'indicators',
+                            id,
+                            'progress'
+                        );
+
+                        const unsubscribe = onSnapshot(
+                            referenciaHistorico,
+                            (historicoSnapshot) => {
+                                const indicadorAtual = documento.data();
+
+                                const registros = historicoSnapshot.docs.map(
+                                    (registro) => registro.data()
+                                );
+
+                                const possuiHistorico = registros.length > 0;
+
+                                // Somar todos os registros de progresso
+                                // Se for um indicador antigo sem histórico,
+                                // manter temporariamente os valores anteriores.
+                                const currentValue = possuiHistorico
+                                    ? registros.reduce(
+                                        (total, registro) =>
+                                            total + Number(registro.amount || 0),
+                                        0
+                                    )
+                                    : Number(indicadorAtual.currentValue ?? 0);
+
+                                const completed =
+                                    indicadorAtual.type === 'conclusao'
+                                        ? possuiHistorico
+                                            ? currentValue >= 1
+                                            : Boolean(indicadorAtual.completed)
+                                        : indicadorAtual.target != null &&
+                                          currentValue >= Number(indicadorAtual.target);
+
+                                setIndicators((anteriores) =>
+                                    anteriores.map((item) => {
+                                        if (item.id !== id) {
+                                            return item;
+                                        }
+
+                                        return {
+                                            ...item,
+                                            currentValue,
+                                            completed,
+
+                                            value: formatIndicatorValue({
+                                                ...indicadorAtual,
+                                                completed,
+                                            }),
+
+                                            progressLabel:
+                                                indicadorAtual.type === 'conclusao'
+                                                    ? (completed
+                                                        ? 'Concluído'
+                                                        : 'Não concluído')
+                                                    : `${currentValue} / ${indicadorAtual.target ?? 0} ${indicadorAtual.unit ?? ''}`.trim(),
+                                        };
+                                    })
+                                );
+                            },
+                            (erro) => {
+                                console.error(
+                                    `Erro ao acompanhar progresso do indicador ${id}:`,
+                                    erro
+                                );
+                            }
+                        );
+
+                        unsubscribeProgress.set(id, unsubscribe);
+                    });
                 },
                 (erro) => {
-                    console.error(
-                        'Erro ao carregar indicadores:',
-                        erro
-                    );
+                    console.error('Erro ao carregar indicadores:', erro);
 
                     setError('Não foi possível carregar os indicadores.');
                     setLoading(false);
@@ -201,20 +312,21 @@ export default function useIndicatorsViewModel() {
                 unsubscribeIndicators();
             }
 
+            unsubscribeProgress.forEach((unsubscribe) => unsubscribe());
             unsubscribeAuth();
         };
     }, []);
 
+    // Quantidade de indicadores concluídos
     const completedCount = useMemo(
-        () =>
-            indicators.filter((indicator) => indicator.completed).length,
+        () => indicators.filter((indicator) => indicator.completed).length,
         [indicators]
     );
 
-    const progress =
-        indicators.length > 0
-            ? completedCount / indicators.length
-            : 0;
+    // Progresso geral dos indicadores
+    const progress = indicators.length > 0
+        ? completedCount / indicators.length
+        : 0;
 
     return {
         indicators,
