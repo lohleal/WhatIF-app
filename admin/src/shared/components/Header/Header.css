@@ -72,6 +72,13 @@
   transform: translateX(2px);
 }
 
+.header-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--color-green-light);
+  cursor: pointer;
+}
 
 @media (max-width: 600px) {
   .admin-header {

@@ -27,6 +27,10 @@ export default function Header() {
     }
   }
 
+  function handleProfile() {
+    navigate('/profile');
+  }
+
   return (
     <header className="admin-header">
       <div className="header-search">
@@ -58,7 +62,9 @@ export default function Header() {
         <button
           className="header-avatar"
           type="button"
+          onClick={handleProfile}
           aria-label="Perfil do administrador"
+          title="Meu perfil"
         >
           <UserRound size={22} />
         </button>

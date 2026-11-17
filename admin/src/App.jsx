@@ -5,6 +5,7 @@ import DashboardScreen from './features/dashboard/views/DashboardScreen';
 import CreateGroupScreen from './features/groups/views/CreateGroupScreen';
 import EditGroupScreen from './features/groups/views/EditGroupScreen';
 import GroupsScreen from './features/groups/views/GroupsScreen';
+import ProfileScreen from './features/profile/views/ProfileScreen';
 import WorkshopsScreen from './features/workshops/views/WorkshopsScreen';
 import AdminLayout from './shared/components/Layout/AdminLayout';
 
@@ -41,6 +42,7 @@ function App() {
               <Route path="workshops" element={<WorkshopsScreen />} />
               <Route path="reports" element={<ComingSoon title="Relatórios" />} />
               <Route path="settings" element={<ComingSoon title="Configurações" />} />
+              <Route path="profile" element={<ProfileScreen />} />
             </Route>
           </Route>
 
