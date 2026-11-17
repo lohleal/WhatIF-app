@@ -346,6 +346,25 @@
   color: var(--color-primary);
 }
 
+.profile-recovery-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 14px;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.profile-recovery-button:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
 
 @media (max-width: 700px) {
   .profile-card {
