@@ -8,6 +8,7 @@ import {
   Clock,
   Plus,
   Search,
+  Pencil,
 } from 'lucide-react';
 
 import { getActiveGroups } from '../services/groupService';
@@ -168,6 +169,7 @@ export default function GroupsScreen() {
                   <th>Descrição</th>
                   <th>Dias e horários</th>
                   <th>Status</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
 
@@ -206,12 +208,27 @@ export default function GroupsScreen() {
                       </span>
                     </td>
 
+                    <td>
+                      <button
+                        type="button"
+                        className="groups-edit-button"
+                        onClick={() =>
+                          navigate(`/groups/${group.id}/edit`)
+                        }
+                        title={`Editar ${group.name}`}
+                        aria-label={`Editar ${group.name}`}
+                      >
+                        <Pencil size={15} />
+                        Editar
+                      </button>
+                    </td>
+
                   </tr>
                 ))}
 
                 {filteredGroups.length === 0 && (
                   <tr>
-                    <td colSpan="4" className="groups-empty">
+                    <td colSpan="5" className="groups-empty">
                       {search
                         ? 'Nenhum grupo encontrado para essa pesquisa.'
                         : 'Nenhum grupo ativo cadastrado.'}

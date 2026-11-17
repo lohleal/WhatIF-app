@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import DashboardScreen from './features/dashboard/views/DashboardScreen';
 import CreateGroupScreen from './features/groups/views/CreateGroupScreen';
+import EditGroupScreen from './features/groups/views/EditGroupScreen';
 import GroupsScreen from './features/groups/views/GroupsScreen';
 import WorkshopsScreen from './features/workshops/views/WorkshopsScreen';
 import AdminLayout from './shared/components/Layout/AdminLayout';
@@ -36,6 +37,7 @@ function App() {
               <Route path="students" element={<ComingSoon title="Estudantes" />} />
               <Route path="groups" element={<GroupsScreen />} />
               <Route path="groups/create" element={<CreateGroupScreen />} />
+              <Route path="groups/:groupId/edit" element={<EditGroupScreen />} />
               <Route path="workshops" element={<WorkshopsScreen />} />
               <Route path="reports" element={<ComingSoon title="Relatórios" />} />
               <Route path="settings" element={<ComingSoon title="Configurações" />} />
