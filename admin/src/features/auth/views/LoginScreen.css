@@ -120,6 +120,42 @@
   cursor: pointer;
 }
 
+
+.login-forgot-password {
+  display: block;
+  align-self: flex-end;
+  margin-top: 2px;
+  padding: 4px 0;
+  border: none;
+  background: transparent;
+  color: #43503E;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.login-forgot-password:hover {
+  color: #65A889;
+  text-decoration: underline;
+}
+
+.login-forgot-password:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-reset-message {
+  margin-bottom: 18px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #EDF5EF;
+  color: #43503E;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+
 .login-error {
   margin-bottom: 18px;
   padding: 12px;
