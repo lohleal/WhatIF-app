@@ -6,6 +6,8 @@ import Svg, { Circle } from 'react-native-svg';
 
 import {
   Pressable,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -93,6 +95,10 @@ export default function Estudo() {
   ];
 
   return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
 
@@ -181,6 +187,8 @@ export default function Estudo() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.detailsContent}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="none"
+            nestedScrollEnabled={true}
           >
             {/* MENSAGEM */}
 
@@ -354,6 +362,7 @@ export default function Estudo() {
         </View>
       </View>
     </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 

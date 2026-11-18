@@ -1,21 +1,24 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import {
-  View,
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
-  ScrollView,
-  Pressable,
-  StyleSheet,
+  View,
 } from 'react-native';
 
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
-  useEstudos,
   MATERIAS,
   formatarHora,
+  useEstudos,
 } from '../../../../features/study/context/EstudosContext';
 
 const CORES = {
@@ -52,6 +55,20 @@ function Botao({ titulo, onPress, secundario = false }) {
   );
 }
 
+function formatarCronometro(milissegundos) {
+  const segundosTotais = Math.floor(milissegundos / 1000);
+
+  const horas = Math.floor(segundosTotais / 3600);
+  const minutos = Math.floor((segundosTotais % 3600) / 60);
+  const segundos = segundosTotais % 60;
+
+  return [
+    String(horas).padStart(2, '0'),
+    String(minutos).padStart(2, '0'),
+    String(segundos).padStart(2, '0'),
+  ].join(':');
+}
+
 export default function RegistroEstudo() {
   const router = useRouter();
 
@@ -67,15 +84,58 @@ export default function RegistroEstudo() {
     setMensagem,
     adicionarTempoManual,
     iniciarSessao,
+    pausarSessao,
+    continuarSessao,
     finalizarSessao,
   } = useEstudos();
 
+  const [atualizacao, setAtualizacao] = useState(Date.now());
+
+  // Atualiza o cronômetro a cada segundo.
+  useEffect(() => {
+    if (!sessaoAtiva || sessaoAtiva.pausadaEm) {
+      return;
+    }
+
+    const intervalo = setInterval(() => {
+      setAtualizacao(Date.now());
+    }, 1000);
+
+    return () => clearInterval(intervalo);
+  }, [sessaoAtiva]);
+
+  // Calcula somente o tempo efetivamente estudado.
+  const tempoDecorrido = sessaoAtiva
+    ? sessaoAtiva.tempoAcumulado +
+      (sessaoAtiva.inicioTrecho
+        ? atualizacao -
+          new Date(sessaoAtiva.inicioTrecho).getTime()
+        : 0)
+    : 0;
+
+  // Finaliza a sessão e exibe a confirmação.
+  function concluirSessao() {
+    if (!sessaoAtiva || tempoDecorrido <= 0) {
+      return;
+    }
+
+    finalizarSessao();
+    setMensagem('SESSAO_REGISTRADA');
+  }
+
   return (
-    <ScrollView
-      style={styles.tela}
-      contentContainerStyle={styles.conteudo}
-      keyboardShouldPersistTaps="handled"
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <SafeAreaView style={{ flex: 1, backgroundColor: CORES.fundo }} edges={['top', 'left', 'right']}>
+        <ScrollView
+          style={styles.tela}
+          contentContainerStyle={styles.conteudo}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="none"
+          nestedScrollEnabled={true}
+        >
       {/* CABEÇALHO */}
       <View style={styles.cabecalho}>
         <Pressable
@@ -94,8 +154,31 @@ export default function RegistroEstudo() {
         </Text>
       </View>
 
-      {/* MENSAGEM */}
-      {mensagem !== '' && (
+      {/* MENSAGEM DE CONFIRMAÇÃO */}
+      {mensagem === 'SESSAO_REGISTRADA' ? (
+        <View style={styles.mensagemSucesso}>
+          <Text style={styles.iconeSucesso}>✓</Text>
+
+          <Text style={styles.tituloSucesso}>
+            Sessão registrada!
+          </Text>
+
+          <Text style={styles.textoSucesso}>
+            Seu tempo de estudo foi registrado com sucesso.
+            Continue assim! Cada pequeno passo conta para
+            alcançar seus objetivos.
+          </Text>
+
+          <Pressable
+            style={styles.botaoFecharSucesso}
+            onPress={() => setMensagem('')}
+          >
+            <Text style={styles.textoBotaoFechar}>
+              Continuar
+            </Text>
+          </Pressable>
+        </View>
+      ) : mensagem !== '' ? (
         <Pressable
           style={styles.mensagem}
           onPress={() => setMensagem('')}
@@ -108,7 +191,7 @@ export default function RegistroEstudo() {
             Toque para fechar
           </Text>
         </Pressable>
-      )}
+      ) : null}
 
       {/* REGISTRO MANUAL */}
       <View style={styles.cartao}>
@@ -129,13 +212,15 @@ export default function RegistroEstudo() {
               onPress={() => setMateriaManual(item)}
               style={[
                 styles.opcaoMateria,
-                materiaManual === item && styles.opcaoSelecionada,
+                materiaManual === item &&
+                  styles.opcaoSelecionada,
               ]}
             >
               <Text
                 style={[
                   styles.textoMateria,
-                  materiaManual === item && styles.textoSelecionado,
+                  materiaManual === item &&
+                    styles.textoSelecionado,
                 ]}
               >
                 {item}
@@ -163,7 +248,7 @@ export default function RegistroEstudo() {
         />
       </View>
 
-      {/* CRONÔMETRO */}
+      {/* SESSÃO DE ESTUDO */}
       <View style={styles.cartao}>
         <Text style={styles.tituloSecao}>
           Sessão de estudo
@@ -185,14 +270,17 @@ export default function RegistroEstudo() {
               onPress={() => setMateria(item)}
               style={[
                 styles.opcaoMateria,
-                materia === item && styles.opcaoSelecionada,
-                !!sessaoAtiva && styles.opcaoDesabilitada,
+                materia === item &&
+                  styles.opcaoSelecionada,
+                !!sessaoAtiva &&
+                  styles.opcaoDesabilitada,
               ]}
             >
               <Text
                 style={[
                   styles.textoMateria,
-                  materia === item && styles.textoSelecionado,
+                  materia === item &&
+                    styles.textoSelecionado,
                 ]}
               >
                 {item}
@@ -204,7 +292,9 @@ export default function RegistroEstudo() {
         {sessaoAtiva ? (
           <View style={styles.sessaoAtiva}>
             <Text style={styles.textoSessao}>
-              Sessão em andamento
+              {sessaoAtiva.pausadaEm
+                ? 'Sessão pausada'
+                : 'Sessão em andamento'}
             </Text>
 
             <Text style={styles.textoAjudaSessao}>
@@ -212,12 +302,33 @@ export default function RegistroEstudo() {
             </Text>
 
             <Text style={styles.textoAjudaSessao}>
-              Início: {formatarHora(sessaoAtiva.inicio)}
+              Início: {formatarHora(sessaoAtiva.inicioOriginal)}
             </Text>
+
+            <Text style={styles.rotuloCronometro}>
+              TEMPO DE ESTUDO
+            </Text>
+
+            <Text style={styles.cronometro}>
+              {formatarCronometro(tempoDecorrido)}
+            </Text>
+
+            {sessaoAtiva.pausadaEm ? (
+              <Botao
+                titulo="Continuar sessão"
+                onPress={continuarSessao}
+              />
+            ) : (
+              <Botao
+                titulo="Pausar sessão"
+                onPress={pausarSessao}
+                secundario
+              />
+            )}
 
             <Botao
               titulo="Finalizar sessão"
-              onPress={finalizarSessao}
+              onPress={concluirSessao}
             />
           </View>
         ) : (
@@ -234,7 +345,9 @@ export default function RegistroEstudo() {
           Pequenos passos também fazem parte do progresso.
         </Text>
       </View>
-    </ScrollView>
+        </ScrollView>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -376,7 +489,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 5,
+    marginTop: 10,
   },
 
   textoBotao: {
@@ -411,6 +524,24 @@ const styles = StyleSheet.create({
     marginTop: 7,
   },
 
+  rotuloCronometro: {
+    color: CORES.secundario,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    textAlign: 'center',
+    marginTop: 22,
+  },
+
+  cronometro: {
+    color: CORES.principal,
+    fontSize: 38,
+    fontWeight: '700',
+    textAlign: 'center',
+    fontVariant: ['tabular-nums'],
+    marginVertical: 10,
+  },
+
   mensagem: {
     backgroundColor: CORES.verdeClaro,
     borderRadius: 10,
@@ -428,6 +559,59 @@ const styles = StyleSheet.create({
     color: CORES.verde,
     fontSize: 10,
     marginTop: 4,
+  },
+
+  mensagemSucesso: {
+    backgroundColor: '#E4F4EC',
+    borderRadius: 18,
+    padding: 24,
+    marginBottom: 18,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#B8E2CC',
+  },
+
+  iconeSucesso: {
+    width: 54,
+    height: 54,
+    lineHeight: 54,
+    textAlign: 'center',
+    borderRadius: 27,
+    overflow: 'hidden',
+    backgroundColor: '#378568',
+    color: '#FFFFFF',
+    fontSize: 30,
+    fontWeight: '700',
+    marginBottom: 14,
+  },
+
+  tituloSucesso: {
+    color: '#286B52',
+    fontSize: 21,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+
+  textoSucesso: {
+    color: '#426B59',
+    fontSize: 14,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+
+  botaoFecharSucesso: {
+    backgroundColor: '#378568',
+    paddingVertical: 13,
+    paddingHorizontal: 35,
+    borderRadius: 11,
+    marginTop: 20,
+  },
+
+  textoBotaoFechar: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
 
   rodape: {

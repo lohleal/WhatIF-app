@@ -1,9 +1,15 @@
 
-import React, {
+import {
   createContext,
   useContext,
+  useEffect,
+  useRef,
   useState,
 } from 'react';
+
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, deleteDoc, doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { auth, db } from '../../../services/firebase/firebaseConfig';
 
 const EstudosContext = createContext(null);
 
@@ -59,13 +65,27 @@ export function formatarHora(data) {
 }
 
 export function formatarTempo(minutos) {
-  const horas = Math.floor(minutos / 60);
-  const resto = minutos % 60;
+  // Aceita minutos fracionados para preservar segundos (ex.: 0,1667 min = 10 s).
+  const totalSegundos = Math.max(0, Math.round(Number(minutos || 0) * 60));
+  const horas = Math.floor(totalSegundos / 3600);
+  const minutosInteiros = Math.floor((totalSegundos % 3600) / 60);
+  const segundos = totalSegundos % 60;
 
-  if (horas === 0) return `${resto} min`;
-  if (resto === 0) return `${horas}h`;
+  if (horas > 0) {
+    return segundos > 0
+      ? `${horas}h ${minutosInteiros}min ${segundos}s`
+      : minutosInteiros > 0
+        ? `${horas}h ${minutosInteiros}min`
+        : `${horas}h`;
+  }
 
-  return `${horas}h ${resto}min`;
+  if (minutosInteiros > 0) {
+    return segundos > 0
+      ? `${minutosInteiros}min ${segundos}s`
+      : `${minutosInteiros}min`;
+  }
+
+  return `${segundos}s`;
 }
 
 export function inicioDaSemana(data = new Date()) {
@@ -89,6 +109,20 @@ export function inicioDaSemana(data = new Date()) {
 
 export function EstudosProvider({ children }) {
   const hoje = dataLocal();
+  const [uidAtual, setUidAtual] = useState(null);
+  const [carregandoAuth, setCarregandoAuth] = useState(true);
+  const [carregandoDados, setCarregandoDados] = useState(true);
+  const configuracaoCarregada = useRef(false);
+  const ultimaConfiguracaoSincronizada = useRef(null);
+
+  useEffect(() => {
+    const cancelar = onAuthStateChanged(auth, (usuario) => {
+      setUidAtual(usuario?.uid ?? null);
+      setCarregandoAuth(false);
+    });
+
+    return cancelar;
+  }, []);
 
   // Registros e meta
   const [registros, setRegistros] = useState([]);
@@ -128,6 +162,139 @@ export function EstudosProvider({ children }) {
   // Mensagens
   const [mensagem, setMensagem] = useState('');
 
+
+  // ------------------------------
+  // SINCRONIZAÇÃO COM FIRESTORE
+  // ------------------------------
+
+  useEffect(() => {
+    if (carregandoAuth) return undefined;
+
+    configuracaoCarregada.current = false;
+    ultimaConfiguracaoSincronizada.current = null;
+
+    if (!uidAtual) {
+      setRegistros([]);
+      setAtividades([]);
+      setMeta('120');
+      setMetaEditavel('120');
+      setCategorias(CATEGORIAS_PADRAO);
+      setSessaoAtiva(null);
+      setCarregandoDados(false);
+      return undefined;
+    }
+
+    setCarregandoDados(true);
+    setRegistros([]);
+    setAtividades([]);
+    setMeta('120');
+    setMetaEditavel('120');
+    setCategorias(CATEGORIAS_PADRAO);
+    setSessaoAtiva(null);
+
+    const cancelarRegistros = onSnapshot(
+      collection(db, 'users', uidAtual, 'studyRecords'),
+      (snapshot) => {
+        setRegistros(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })));
+        setCarregandoDados(false);
+      },
+      (error) => {
+        console.error('[Estudos] Erro ao carregar registros:', error);
+        setMensagem('Não foi possível carregar os registros de estudo.');
+        setCarregandoDados(false);
+      }
+    );
+
+    const cancelarAtividades = onSnapshot(
+      collection(db, 'users', uidAtual, 'studyActivities'),
+      (snapshot) => {
+        setAtividades(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })));
+      },
+      (error) => {
+        console.error('[Estudos] Erro ao carregar atividades:', error);
+        setMensagem('Não foi possível carregar as atividades.');
+      }
+    );
+
+    const cancelarConfiguracoes = onSnapshot(
+      doc(db, 'users', uidAtual, 'studySettings', 'main'),
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const dados = snapshot.data();
+          const metaSalva = String(dados.meta ?? '120');
+          const categoriasSalvas =
+            Array.isArray(dados.categorias) && dados.categorias.length
+              ? dados.categorias
+              : CATEGORIAS_PADRAO;
+          const sessaoSalva = dados.sessaoAtiva ?? null;
+
+          ultimaConfiguracaoSincronizada.current = JSON.stringify({
+            meta: metaSalva,
+            categorias: categoriasSalvas,
+            sessaoAtiva: sessaoSalva,
+          });
+
+          setMeta(metaSalva);
+          setMetaEditavel(metaSalva);
+          setCategorias(categoriasSalvas);
+          setSessaoAtiva(sessaoSalva);
+        }
+        configuracaoCarregada.current = true;
+      },
+      (error) => {
+        console.error('[Estudos] Erro ao carregar configurações:', error);
+        setMensagem('Não foi possível carregar as configurações de estudo.');
+        configuracaoCarregada.current = true;
+      }
+    );
+
+    return () => {
+      cancelarRegistros();
+      cancelarAtividades();
+      cancelarConfiguracoes();
+      configuracaoCarregada.current = false;
+    };
+  }, [uidAtual, carregandoAuth]);
+
+  useEffect(() => {
+    if (!uidAtual || !configuracaoCarregada.current) return;
+
+    const configuracaoAtual = JSON.stringify({ meta, categorias, sessaoAtiva });
+    if (configuracaoAtual === ultimaConfiguracaoSincronizada.current) return;
+
+    ultimaConfiguracaoSincronizada.current = configuracaoAtual;
+    setDoc(
+      doc(db, 'users', uidAtual, 'studySettings', 'main'),
+      { meta, categorias, sessaoAtiva },
+      { merge: true }
+    ).catch((error) => {
+      ultimaConfiguracaoSincronizada.current = null;
+      console.error('[Estudos] Erro ao salvar configurações:', error);
+    });
+  }, [uidAtual, meta, categorias, sessaoAtiva]);
+
+  function salvarRegistroNoFirestore(registro) {
+    if (!uidAtual) return;
+    setDoc(
+      doc(db, 'users', uidAtual, 'studyRecords', String(registro.id)),
+      registro
+    ).catch((error) => {
+      console.error('[Estudos] Erro ao salvar registro:', error);
+      setMensagem('Não foi possível salvar o registro na nuvem.');
+    });
+  }
+
+  function salvarAtividadeNoFirestore(atividade) {
+    if (!uidAtual) return;
+    setDoc(
+      doc(db, 'users', uidAtual, 'studyActivities', String(atividade.id)),
+      atividade
+    ).catch((error) => {
+      console.error('[Estudos] Erro ao salvar atividade:', error);
+      setMensagem('Não foi possível salvar a atividade na nuvem.');
+    });
+  }
+
   // ------------------------------
   // CÁLCULOS
   // ------------------------------
@@ -139,7 +306,10 @@ export function EstudosProvider({ children }) {
   );
 
   const minutosHoje = registrosHoje.reduce(
-    (total, registro) => total + registro.minutos,
+    (total, registro) =>
+      total + (Number.isFinite(registro.segundos)
+        ? registro.segundos / 60
+        : registro.minutos),
     0
   );
 
@@ -195,7 +365,10 @@ export function EstudosProvider({ children }) {
     );
 
   const totalPeriodo = registrosFiltrados.reduce(
-    (total, registro) => total + registro.minutos,
+    (total, registro) =>
+      total + (Number.isFinite(registro.segundos)
+        ? registro.segundos / 60
+        : registro.minutos),
     0
   );
 
@@ -209,26 +382,46 @@ export function EstudosProvider({ children }) {
   // REGISTROS DE ESTUDO
   // ------------------------------
 
-  function adicionarRegistro(minutos, nomeMateria, inicio, fim) {
-    const duracao = Number(minutos);
+  function adicionarRegistroSegundos(segundos, nomeMateria, inicio, fim) {
+    const duracaoSegundos = Math.floor(Number(segundos));
 
-    if (!Number.isFinite(duracao) || duracao <= 0) {
+    if (!Number.isFinite(duracaoSegundos) || duracaoSegundos <= 0) {
       setMensagem('Informe um tempo de estudo maior que zero.');
-      return;
+      return false;
     }
 
     const registro = {
       id: `${Date.now()}-${Math.random()}`,
       materia: nomeMateria,
-      minutos: Math.round(duracao),
+      segundos: duracaoSegundos,
+      // Mantém minutos como valor fracionado para compatibilidade com metas e telas existentes.
+      minutos: duracaoSegundos / 60,
       data: dataLocal(new Date(fim)),
       inicio,
       fim,
     };
 
     setRegistros((anteriores) => [registro, ...anteriores]);
+    salvarRegistroNoFirestore(registro);
     setMensagem('Registro de estudo adicionado!');
     setMinutosManuais('');
+    return true;
+  }
+
+  function adicionarRegistro(minutos, nomeMateria, inicio, fim) {
+    const duracao = Number(minutos);
+
+    if (!Number.isFinite(duracao) || duracao <= 0) {
+      setMensagem('Informe um tempo de estudo maior que zero.');
+      return false;
+    }
+
+    return adicionarRegistroSegundos(
+      Math.round(duracao * 60),
+      nomeMateria,
+      inicio,
+      fim
+    );
   }
 
   function adicionarTempoManual() {
@@ -256,46 +449,100 @@ export function EstudosProvider({ children }) {
     );
   }
 
-  function iniciarSessao() {
-    setSessaoAtiva({
-      materia,
-      inicio: new Date().toISOString(),
-    });
+function iniciarSessao() {
+  const agora = new Date().toISOString();
 
-    setMensagem('Sessão iniciada. Bons estudos!');
+  setSessaoAtiva({
+    materia,
+    inicioOriginal: agora,
+    inicioTrecho: agora,
+    tempoAcumulado: 0,
+    pausadaEm: null,
+  });
+
+  setMensagem('Sessão iniciada. Bons estudos!');
+}
+
+function pausarSessao() {
+  if (!sessaoAtiva || sessaoAtiva.pausadaEm) return;
+
+  setSessaoAtiva((anterior) => ({
+    ...anterior,
+    tempoAcumulado:
+      anterior.tempoAcumulado +
+      (Date.now() - new Date(anterior.inicioTrecho).getTime()),
+    inicioTrecho: null,
+    pausadaEm: new Date().toISOString(),
+  }));
+
+  setMensagem('Sessão pausada. Descanse um pouco!');
+}
+
+function continuarSessao() {
+  if (!sessaoAtiva || !sessaoAtiva.pausadaEm) return;
+
+  setSessaoAtiva((anterior) => ({
+    ...anterior,
+    inicioTrecho: new Date().toISOString(),
+    pausadaEm: null,
+  }));
+
+  setMensagem('Sessão retomada. Bons estudos!');
+}
+
+function finalizarSessao() {
+  if (!sessaoAtiva) {
+    return false;
   }
 
-  function finalizarSessao() {
-    if (!sessaoAtiva) return;
+  const agora = Date.now();
 
-    const fim = new Date();
-    const inicio = new Date(sessaoAtiva.inicio);
+  const tempoTotal =
+    sessaoAtiva.tempoAcumulado +
+    (sessaoAtiva.inicioTrecho
+      ? agora - new Date(sessaoAtiva.inicioTrecho).getTime()
+      : 0);
 
-    const minutos = Math.floor(
-      (fim.getTime() - inicio.getTime()) / 60000
-    );
-
-    if (minutos < 1) {
-      setMensagem(
-        'A sessão durou menos de um minuto e não foi registrada. Tente novamente após um minuto.'
-      );
-      return;
-    }
-
-    adicionarRegistro(
-      minutos,
-      sessaoAtiva.materia,
-      sessaoAtiva.inicio,
-      fim.toISOString()
-    );
-
-    setSessaoAtiva(null);
+  // Não registra duração zero ou valores inválidos.
+  if (!Number.isFinite(tempoTotal) || tempoTotal <= 0) {
+    setMensagem('A sessão precisa ter algum tempo de duração.');
+    return false;
   }
+
+  // Registra o tempo real em segundos, sem arredondar para minutos.
+  // Ex.: 10 segundos são armazenados como 10 segundos.
+  const segundos = Math.floor(tempoTotal / 1000);
+
+  const registrado = adicionarRegistroSegundos(
+    segundos,
+    sessaoAtiva.materia,
+    sessaoAtiva.inicioOriginal,
+    new Date(agora).toISOString()
+  );
+
+  if (!registrado) {
+    return false;
+  }
+
+  // Encerra a sessão somente depois de adicionar o registro.
+  setSessaoAtiva(null);
+  return true;
+}
+
+
 
   function excluirRegistro(id) {
     setRegistros((anteriores) =>
       anteriores.filter((registro) => registro.id !== id)
     );
+
+    if (uidAtual) {
+      deleteDoc(doc(db, 'users', uidAtual, 'studyRecords', String(id)))
+        .catch((error) => {
+          console.error('[Estudos] Erro ao excluir registro:', error);
+          setMensagem('Não foi possível excluir o registro na nuvem.');
+        });
+    }
 
     setMensagem('Registro excluído.');
   }
@@ -320,6 +567,7 @@ export function EstudosProvider({ children }) {
     }
 
     setMeta(String(valor));
+    setMetaEditavel(String(valor));
     setMensagem('Meta diária atualizada!');
   }
 
@@ -474,6 +722,7 @@ export function EstudosProvider({ children }) {
           item.id === editandoId ? atividade : item
         )
       );
+      salvarAtividadeNoFirestore(atividade);
 
       setMensagem('Atividade atualizada!');
     } else {
@@ -481,6 +730,7 @@ export function EstudosProvider({ children }) {
         ...anteriores,
         atividade,
       ]);
+      salvarAtividadeNoFirestore(atividade);
 
       setMensagem('Atividade cadastrada!');
     }
@@ -508,15 +758,26 @@ export function EstudosProvider({ children }) {
       anteriores.filter((item) => item.id !== id)
     );
 
+    if (uidAtual) {
+      deleteDoc(doc(db, 'users', uidAtual, 'studyActivities', String(id)))
+        .catch((error) => {
+          console.error('[Estudos] Erro ao excluir atividade:', error);
+          setMensagem('Não foi possível excluir a atividade na nuvem.');
+        });
+    }
+
     setMensagem('Atividade excluída.');
   }
 
   function alterarStatus(id, status) {
+    const atividade = atividades.find((item) => item.id === id);
+    if (!atividade) return;
+
+    const atualizado = { ...atividade, status };
     setAtividades((anteriores) =>
-      anteriores.map((item) =>
-        item.id === id ? { ...item, status } : item
-      )
+      anteriores.map((item) => item.id === id ? atualizado : item)
     );
+    salvarAtividadeNoFirestore(atualizado);
   }
 
   // ------------------------------
@@ -525,6 +786,7 @@ export function EstudosProvider({ children }) {
 
   const valor = {
     hoje,
+    carregandoDados,
 
     registros,
     setRegistros,
@@ -577,8 +839,11 @@ export function EstudosProvider({ children }) {
     setMensagem,
 
     adicionarRegistro,
+    adicionarRegistroSegundos,
     adicionarTempoManual,
     iniciarSessao,
+    pausarSessao,
+    continuarSessao,
     finalizarSessao,
     excluirRegistro,
     salvarMeta,

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import {
   View,
+  KeyboardAvoidingView,
   Text,
   ScrollView,
   TouchableOpacity,
@@ -8,6 +9,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
@@ -200,11 +202,19 @@ export default function ProgressoEstudos() {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.conteudo}
-      showsVerticalScrollIndicator={false}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F8FC' }} edges={['top', 'left', 'right']}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.conteudo}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="none"
+          nestedScrollEnabled={true}
+        >
       {/* Cabeçalho */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -402,7 +412,9 @@ export default function ProgressoEstudos() {
           Continue acompanhando sua evolução! 
         </Text>
       </View>
-    </ScrollView>
+        </ScrollView>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 

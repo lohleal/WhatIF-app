@@ -3,6 +3,7 @@ import React from 'react';
 
 import {
   View,
+  KeyboardAvoidingView,
   Text,
   TextInput,
   ScrollView,
@@ -10,6 +11,8 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
+
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
@@ -105,11 +108,18 @@ export default function Atividades() {
   } = useEstudos();
 
   return (
-    <ScrollView
-      style={styles.tela}
-      contentContainerStyle={styles.conteudo}
-      keyboardShouldPersistTaps="handled"
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <SafeAreaView style={{ flex: 1, backgroundColor: CORES.fundo }} edges={['top', 'left', 'right']}>
+        <ScrollView
+          style={styles.tela}
+          contentContainerStyle={styles.conteudo}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="none"
+          nestedScrollEnabled={true}
+        >
       {/* CABEÇALHO */}
       <View style={styles.cabecalho}>
         <Pressable
@@ -615,7 +625,9 @@ export default function Atividades() {
           Pequenos passos também fazem parte do progresso.
         </Text>
       </View>
-    </ScrollView>
+        </ScrollView>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
