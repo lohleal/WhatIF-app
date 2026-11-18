@@ -93,22 +93,30 @@ function criarPeriodoExtra() {
     fim,
   };
 }
+    function normalizarPeriodo(periodo) {
+    const inicio = new Date(periodo.inicio);
+    const fim = new Date(periodo.fim);
 
-// Ajusta automaticamente a data final quando o sono atravessa a meia-noite.
-function normalizarPeriodo(periodo) {
-  const inicio = new Date(periodo.inicio);
-  const fim = new Date(periodo.fim);
+    // Os dois horários começam considerando a mesma data.
+    // Isso evita que uma data antiga gere 24 horas extras.
+    fim.setFullYear(
+        inicio.getFullYear(),
+        inicio.getMonth(),
+        inicio.getDate()
+    );
 
-  if (fim <= inicio) {
-    fim.setDate(fim.getDate() + 1);
-  }
+    // Se o horário final for anterior ou igual ao inicial,
+    // significa que o sono atravessou a meia-noite.
+    if (fim <= inicio) {
+        fim.setDate(fim.getDate() + 1);
+    }
 
-  return {
-    ...periodo,
-    inicio,
-    fim,
-  };
-}
+    return {
+        ...periodo,
+        inicio,
+        fim,
+    };
+    }
 
 // Converte os registros recebidos do Firestore.
 function converterRegistro(registro) {

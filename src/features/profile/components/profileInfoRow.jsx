@@ -1,3 +1,4 @@
+
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import {
@@ -16,14 +17,8 @@ export default function ProfileInfoRow({
     onPress,
     password = false,
 }) {
-    return (
-        <Pressable
-            onPress={onPress}
-            style={({ pressed }) => [
-                styles.container,
-                pressed && onPress && styles.pressed,
-            ]}
-        >
+    const Conteudo = (
+        <>
             <View style={styles.iconContainer}>
                 <MaterialCommunityIcons
                     name={icon}
@@ -45,39 +40,54 @@ export default function ProfileInfoRow({
                 </Text>
             </View>
 
-            <MaterialCommunityIcons
-                name={
-                    password
-                        ? 'eye-off-outline'
-                        : 'chevron-right'
-                }
-                size={24}
-                color={
-                    password
-                        ? '#777777'
-                        : COLORS.primary
-                }
-            />
-        </Pressable>
+            {password ? (
+                <MaterialCommunityIcons
+                    name="eye-off-outline"
+                    size={24}
+                    color="#777777"
+                />
+            ) : onPress ? (
+                <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={24}
+                    color={COLORS.primary}
+                />
+            ) : null}
+        </>
+    );
+
+    if (onPress) {
+        return (
+            <Pressable
+                onPress={onPress}
+                style={({ pressed }) => [
+                    styles.container,
+                    pressed && styles.pressed,
+                ]}
+            >
+                {Conteudo}
+            </Pressable>
+        );
+    }
+
+    return (
+        <View style={styles.container}>
+            {Conteudo}
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        minHeight: 64,
-
+        minHeight: 76,
         paddingHorizontal: 14,
-
+        paddingVertical: 10,
         borderRadius: 22,
-
         backgroundColor: '#FFFFFFE8',
-
         borderWidth: 1,
         borderColor: '#E8E8E8',
-
         flexDirection: 'row',
         alignItems: 'center',
-
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -85,8 +95,8 @@ const styles = StyleSheet.create({
         },
         shadowOpacity: 0.04,
         shadowRadius: 3,
-
         elevation: 1,
+        overflow: 'hidden',
     },
 
     pressed: {
@@ -96,32 +106,29 @@ const styles = StyleSheet.create({
     iconContainer: {
         width: 42,
         height: 42,
-
         borderRadius: 21,
-
         backgroundColor: '#EEF7EB',
-
         alignItems: 'center',
         justifyContent: 'center',
-
         marginRight: 12,
     },
 
     textContainer: {
         flex: 1,
+        backgroundColor: 'transparent',
     },
 
     label: {
         fontSize: 12,
         color: COLORS.textSecondary,
+        backgroundColor: 'transparent',
     },
 
     value: {
         marginTop: 2,
-
         fontSize: 15,
         fontWeight: '500',
-
         color: COLORS.text,
+        backgroundColor: 'transparent',
     },
 });

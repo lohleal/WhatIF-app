@@ -1,14 +1,6 @@
-
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import {
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-
-const COLUMNS = 4;
 
 function invertEdge(edge) {
     if (edge === 'out') return 'in';
@@ -16,31 +8,40 @@ function invertEdge(edge) {
     return 'flat';
 }
 
-function getPuzzleEdges(index, total) {
-    const row = Math.floor(index / COLUMNS);
-    const column = index % COLUMNS;
+// Cada borda compartilhada é calculada uma única vez a partir da posição.
+// Assim, a direita de uma peça sempre combina com a esquerda da próxima,
+// e a base sempre combina com o topo da peça que está abaixo.
+function horizontalEdge(row, column) {
+    return (row + column) % 2 === 0 ? 'out' : 'in';
+}
 
-    const hasLeft = column > 0;
-    const hasRight = column < COLUMNS - 1 && index + 1 < total;
-    const hasTop = index >= COLUMNS;
-    const hasBottom = index + COLUMNS < total;
+function verticalEdge(row, column) {
+    return (row + column) % 2 === 0 ? 'out' : 'in';
+}
 
-    const rightPattern = ['out', 'in', 'out', 'flat'];
-    const leftPattern = ['flat', 'in', 'out', 'in'];
+function getPuzzleEdges(index, total, columns) {
+    const row = Math.floor(index / columns);
+    const column = index % columns;
 
-    const right = hasRight ? rightPattern[column] : 'flat';
-    const left = hasLeft ? leftPattern[column] : 'flat';
+    const hasLeft = column > 0 && index - 1 >= row * columns;
+    const hasRight = column < columns - 1 && index + 1 < total;
+    const hasTop = index - columns >= 0;
+    const hasBottom = index + columns < total;
 
-    function verticalEdge(r, c) {
-        return (r + c) % 2 === 0 ? 'in' : 'out';
-    }
+    const left = hasLeft
+        ? invertEdge(horizontalEdge(row, column - 1))
+        : 'flat';
 
-    const bottom = hasBottom
-        ? verticalEdge(row, column)
+    const right = hasRight
+        ? horizontalEdge(row, column)
         : 'flat';
 
     const top = hasTop
         ? invertEdge(verticalEdge(row - 1, column))
+        : 'flat';
+
+    const bottom = hasBottom
+        ? verticalEdge(row, column)
         : 'flat';
 
     return { top, right, bottom, left };
@@ -66,7 +67,6 @@ function createPuzzlePath(width, height, edges) {
         path += ` L ${right} ${top}`;
     } else {
         const direction = edges.top === 'out' ? -1 : 1;
-
         path += `
             L ${middleX - neck} ${top}
             C ${middleX - neck} ${top}
@@ -84,7 +84,6 @@ function createPuzzlePath(width, height, edges) {
         path += ` L ${right} ${bottom}`;
     } else {
         const direction = edges.right === 'out' ? 1 : -1;
-
         path += `
             L ${right} ${middleY - neck}
             C ${right} ${middleY - neck}
@@ -102,7 +101,6 @@ function createPuzzlePath(width, height, edges) {
         path += ` L ${left} ${bottom}`;
     } else {
         const direction = edges.bottom === 'out' ? 1 : -1;
-
         path += `
             L ${middleX + neck} ${bottom}
             C ${middleX + neck} ${bottom}
@@ -120,7 +118,6 @@ function createPuzzlePath(width, height, edges) {
         path += ` L ${left} ${top}`;
     } else {
         const direction = edges.left === 'out' ? -1 : 1;
-
         path += `
             L ${left} ${middleY + neck}
             C ${left} ${middleY + neck}
@@ -142,28 +139,32 @@ export default function IndicatorCard({
     width,
     index,
     total,
-    overlap = 8,
-    overlapVertical = 10,
+    columns = 4,
+    overlap,
+    overlapVertical,
     onPress,
 }) {
     const height = width * 1.02;
 
-    const edges = getPuzzleEdges(index, total);
-    const path = createPuzzlePath(width, height, edges);
+    // A sobreposição precisa ser o dobro da profundidade da aba (9%),
+    // para que a saliência entre exatamente no recorte da peça vizinha.
+    const tabOverlap = Math.min(width, height) * 0.18;
+    const horizontalOverlap = overlap ?? tabOverlap;
+    const verticalOverlap = overlapVertical ?? tabOverlap;
 
-    const column = index % COLUMNS;
-    const row = Math.floor(index / COLUMNS);
+    const edges = getPuzzleEdges(index, total, columns);
 
-    const hasRight = column < COLUMNS - 1 && index + 1 < total;
-    const hasBottom = index + COLUMNS < total;
+    const column = index % columns;
+    const row = Math.floor(index / columns);
 
-    // Ajusta ícones e textos proporcionalmente à peça.
+    const hasRight = column < columns - 1 && index + 1 < total;
+    const hasBottom = index + columns < total;
+
     const scale = width / 100;
     const iconSize = Math.max(16, Math.min(28, 28 * scale));
     const titleSize = Math.max(9, Math.min(12, 12 * scale));
     const valueSize = Math.max(8, Math.min(10, 10 * scale));
 
-    // Personalização só aparece colorida após a conclusão.
     const completed = indicator.completed === true;
 
     const pieceColor = completed
@@ -182,10 +183,10 @@ export default function IndicatorCard({
                 {
                     width,
                     height,
-                    marginRight: hasRight ? -overlap : 0,
-                    marginBottom: hasBottom ? -overlapVertical : 0,
+                    marginRight: hasRight ? -horizontalOverlap : 0,
+                    marginBottom: hasBottom ? -verticalOverlap : 0,
                     opacity: pressed ? 0.82 : 1,
-                    zIndex: row * 4 + column,
+                    zIndex: row * columns + column,
                 },
             ]}
         >
@@ -196,7 +197,7 @@ export default function IndicatorCard({
                 style={StyleSheet.absoluteFill}
             >
                 <Path
-                    d={path}
+                    d={createPuzzlePath(width, height, edges)}
                     fill={pieceColor}
                     stroke="#FFFFFF"
                     strokeWidth={1.5}
@@ -245,13 +246,11 @@ const styles = StyleSheet.create({
     container: {
         position: 'relative',
     },
-
     content: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
     },
-
     title: {
         marginTop: 5,
         lineHeight: 15,
@@ -259,7 +258,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         color: '#292929',
     },
-
     value: {
         marginTop: 3,
         textAlign: 'center',

@@ -10,21 +10,22 @@ export default function StudentLayout() {
                 headerShown: false,
                 tabBarActiveTintColor: COLORS.primary,
                 tabBarInactiveTintColor: '#7F8A72',
+                        
+                //altura da tabBar
+            tabBarStyle: {
+                height: 110,
+                paddingTop: 10,
+                paddingBottom: 20,
+                backgroundColor: '#EEF1E7',
 
-                tabBarStyle: {
-                    height: 88,
-                    paddingTop: 10,
-                    paddingBottom: 12,
-                    backgroundColor: '#EEF1E7',
+                borderTopWidth: 0,
 
-                    borderTopWidth: 0,
+                borderTopLeftRadius: 28,
+                borderTopRightRadius: 28,
 
-                    borderTopLeftRadius: 28,
-                    borderTopRightRadius: 28,
-
-                    position: 'absolute',
-                    overflow: 'hidden',
-                },
+                position: 'absolute',
+                overflow: 'hidden',
+            },
 
                 tabBarLabelStyle: {
                     fontSize: 11,

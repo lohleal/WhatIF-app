@@ -57,7 +57,9 @@ export default function Indicadores() {
      * 12 indicadores → 12 peças
      */
 
-    const columns = 4;
+    const columns =
+        width <= 380 ? 2 :
+            width <= 650 ? 3 : 4;
 
     const horizontalPadding = Math.max(
         10,
@@ -66,12 +68,11 @@ export default function Indicadores() {
 
     const puzzleWidth = width - horizontalPadding * 2;
 
-    // O encaixe diminui junto com o quebra-cabeça
-    const overlap = Math.min(15, puzzleWidth * 0.085);
-    const overlapVertical = Math.min(24, puzzleWidth * 0.14);
-
     const cardWidth =
-        (puzzleWidth + overlap * (columns - 1)) / columns;
+        puzzleWidth / (columns - 0.18 * (columns - 1));
+
+    const overlap = cardWidth * 0.18;
+    const overlapVertical = cardWidth * 1.02 * 0.18;
 
 
     const progressPercentage =
@@ -116,9 +117,11 @@ export default function Indicadores() {
                     ? userDoc.data().name
                     : '';
 
-                setStudentName(
-                    profileName || user.displayName || name || 'estudante'
-                );
+                const nomeCompleto =
+                    profileName || user.displayName || name || 'estudante';
+
+                setStudentName(nomeCompleto.trim().split(/\s+/)[0]);
+
             } catch (error) {
                 console.error('Erro ao carregar nome:', error);
                 setStudentName(user.displayName || name || 'estudante');
@@ -836,7 +839,7 @@ const styles = StyleSheet.create({
     },
 
     content: {
-        paddingTop: 12,
+        paddingTop: 40,
 
         /*
          * Reserva espaço para a
@@ -1094,7 +1097,7 @@ const styles = StyleSheet.create({
          * Sua TabBar possui 88px.
          * Então o botão fica acima dela.
          */
-        bottom: 101,
+        bottom: 140,
 
         width: 58,
         height: 58,

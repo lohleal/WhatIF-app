@@ -98,15 +98,7 @@ export default function Perfil() {
                                 </Text> */}
                             </View>
 
-                            <Pressable style={styles.notificationButton}>
-                                <MaterialCommunityIcons
-                                    name="bell-outline"
-                                    size={26}
-                                    color={COLORS.primary}
-                                />
 
-                                <View style={styles.notificationDot} />
-                            </Pressable>
                         </View>
 
                         {/* FOTO */}
