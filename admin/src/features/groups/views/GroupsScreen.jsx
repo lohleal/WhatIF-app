@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Check,
   Clock,
+  Eye,
   Layers,
   Pencil,
   Plus,
@@ -403,6 +404,7 @@ export default function GroupsScreen() {
 
               <tbody>
                 {filteredGroups.map((group) => (
+
                   <tr key={group.id}>
 
                     <td>
@@ -437,18 +439,31 @@ export default function GroupsScreen() {
                     </td>
 
                     <td>
-                      <button
-                        type="button"
-                        className="groups-edit-button"
-                        onClick={() =>
-                          navigate(`/groups/${group.id}/edit`)
-                        }
-                        title={`Editar ${group.name}`}
-                        aria-label={`Editar ${group.name}`}
-                      >
-                        <Pencil size={15} />
-                        Editar
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+
+                        <button
+                          type="button"
+                          className="groups-edit-button"
+                          onClick={() => navigate(`/groups/${group.id}`)}
+                          title={`Ver detalhes de ${group.name}`}
+                          aria-label={`Ver detalhes de ${group.name}`}
+                        >
+                          <Eye size={15} />
+                          Detalhes
+                        </button>
+
+                        <button
+                          type="button"
+                          className="groups-edit-button"
+                          onClick={() => navigate(`/groups/${group.id}/edit`)}
+                          title={`Editar ${group.name}`}
+                          aria-label={`Editar ${group.name}`}
+                        >
+                          <Pencil size={15} />
+                          Editar
+                        </button>
+
+                      </div>
                     </td>
 
                   </tr>

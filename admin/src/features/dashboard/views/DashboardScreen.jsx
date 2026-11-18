@@ -1,89 +1,101 @@
 
+import { useEffect, useState } from 'react';
+
+import { Chart } from 'react-google-charts';
+import { buscarDadosDashboard } from '../services/dashboardService';
+
 import './DashboardScreen.css';
 
-const monthlyData = [
-  { month: 'Jun', created: 85, completed: 58 },
-  { month: 'Jul', created: 110, completed: 78 },
-  { month: 'Ago', created: 125, completed: 92 },
-  { month: 'Set', created: 150, completed: 108 },
-  { month: 'Out', created: 185, completed: 142 },
-  { month: 'Nov', created: 220, completed: 175 },
-];
-
-const categories = [
-  { name: 'Estudos', value: 320, color: '#6B91C8' },
-  { name: 'Hidratação', value: 285, color: '#73B9DD' },
-  { name: 'Sono', value: 240, color: '#AA8BC7' },
-  { name: 'Atividade física', value: 198, color: '#75A98A' },
-  { name: 'Outros', value: 241, color: '#D8B477' },
-];
-
-const wellbeing = [
-  { name: 'Hidratação', value: 2150, percentage: 86, color: '#75BDF8', icon: '💧' },
-  { name: 'Sono', value: 1680, percentage: 67, color: '#B38BCB', icon: '🌙' },
-  { name: 'Humor', value: 1840, percentage: 74, color: '#E6B85C', icon: '😊' },
-];
-
-const status = [
-  { name: 'Concluídos', value: 876, color: '#65A889' },
-  { name: 'Em andamento', value: 251, color: '#E9B85D' },
-  { name: 'Não iniciados', value: 157, color: '#A7B8C9' },
-];
-
-const cards = [
-  {
-    title: 'Estudantes ativos',
-    value: '248',
-    detail: '+12,5% neste mês',
-    icon: '👥',
-    color: 'blue',
-  },
-  {
-    title: 'Grupos cadastrados',
-    value: '12',
-    detail: '4 novos grupos',
-    icon: '🏫',
-    color: 'purple',
-  },
-  {
-    title: 'Indicadores criados',
-    value: '1.284',
-    detail: '+18,3% neste mês',
-    icon: '🎯',
-    color: 'orange',
-  },
-  {
-    title: 'Indicadores completos',
-    value: '876',
-    detail: '68,2% de conclusão',
-    icon: '✓',
-    color: 'green',
-  },
-  {
-    title: 'Atividades concluídas',
-    value: '2.450',
-    detail: '+15,2% neste mês',
-    icon: '📋',
-    color: 'blue',
-  },
-  {
-    title: 'Registros de bem-estar',
-    value: '5.670',
-    detail: 'Registros realizados',
-    icon: '💚',
-    color: 'pink',
-  },
-];
-
 export default function DashboardScreen() {
-  const totalIndicators = status.reduce(
+  const [dashboard, setDashboard] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    async function carregarDashboard() {
+      try {
+        setLoading(true);
+        setError('');
+
+        const dados = await buscarDadosDashboard();
+
+        setDashboard(dados);
+      } catch (erro) {
+        console.error('Erro ao carregar dashboard:', erro);
+        setError('Não foi possível carregar os dados do dashboard.');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    carregarDashboard();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="dashboard-screen">
+        <div className="dashboard-loading">
+          Carregando dados do painel administrativo...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="dashboard-screen">
+        <div className="dashboard-error">
+          <p>{error}</p>
+
+          <button onClick={() => window.location.reload()}>
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const {
+    cards,
+    monthlyData,
+    categories,
+    wellbeing,
+    status,
+    totalIndicators,
+  } = dashboard;
+
+
+
+  // Escala das categorias.
+  const maxCategory = Math.max(
+    1,
+    ...categories.map((item) => item.value)
+  );
+
+  // Total de indicadores por status.
+  const totalStatus = status.reduce(
     (total, item) => total + item.value,
     0
   );
 
-  const maxMonthly = Math.max(
-    ...monthlyData.map((item) => item.created)
-  );
+  // Monta o gráfico de rosca usando os valores reais.
+  let percentualAcumulado = 0;
+
+  const donutStops = status.map((item) => {
+    const percentual = totalStatus > 0
+      ? (item.value / totalStatus) * 100
+      : 0;
+
+    const inicio = percentualAcumulado;
+
+    percentualAcumulado += percentual;
+
+    return `${item.color} ${inicio}% ${percentualAcumulado}%`;
+  });
+
+  const donutBackground = totalStatus > 0
+    ? `conic-gradient(${donutStops.join(', ')})`
+    : '#E9EDF1';
 
   return (
     <div className="dashboard-screen">
@@ -91,32 +103,52 @@ export default function DashboardScreen() {
       {/* CABEÇALHO */}
       <div className="dashboard-heading">
         <div>
-          <span className="dashboard-eyebrow">PAINEL ADMINISTRATIVO</span>
+          <span className="dashboard-eyebrow">
+            PAINEL ADMINISTRATIVO
+          </span>
+
           <h1>Visão geral</h1>
+
           <p>
-            Acompanhe o bem-estar dos estudantes e as atividades da escola.
+            Acompanhe os dados gerais dos indicadores dos estudantes.
           </p>
         </div>
 
-        <span className="dashboard-period">
-          <span>●</span> Dados demonstrativos
-        </span>
+       
       </div>
 
       {/* CARDS */}
+      {/* RESUMO DOS INDICADORES */}
       <section className="dashboard-cards">
-        {cards.map((card) => (
+        {cards.slice(2, 4).map((card) => (
           <div className="dashboard-card" key={card.title}>
             <div className="dashboard-card-top">
               <span>{card.title}</span>
-             
+              <div className={`dashboard-card-icon ${card.color}`}>
+                {card.icon}
+              </div>
             </div>
 
-            <strong>{card.value}</strong>
+            <strong>
+              {Number(card.value).toLocaleString('pt-BR')}
+            </strong>
 
             <small>{card.detail}</small>
           </div>
         ))}
+
+        <div className="dashboard-card">
+          <div className="dashboard-card-top">
+            <span>Indicadores em andamento</span>
+            <div className="dashboard-card-icon orange">↗</div>
+          </div>
+
+          <strong>
+            {status.find((item) => item.name === 'Em andamento')?.value || 0}
+          </strong>
+
+          <small>Indicadores com progresso iniciado</small>
+        </div>
       </section>
 
       {/* EVOLUÇÃO DOS INDICADORES */}
@@ -124,56 +156,63 @@ export default function DashboardScreen() {
         <div className="dashboard-panel-heading">
           <div>
             <h2>Evolução dos indicadores</h2>
-            <p>Indicadores criados e concluídos nos últimos meses.</p>
+            <p>Indicadores criados e concluídos por semana no mês atual.</p>
           </div>
 
           <div className="dashboard-chart-legend">
-            <span><i className="legend-created" /> Criados</span>
-            <span><i className="legend-completed" /> Concluídos</span>
+            <span>
+              <i className="legend-created" />
+              Criados
+            </span>
+
+            <span>
+              <i className="legend-completed" />
+              Concluídos
+            </span>
           </div>
         </div>
 
-        <div className="dashboard-monthly-chart">
-          <div className="chart-y-labels">
-            <span>250</span>
-            <span>200</span>
-            <span>150</span>
-            <span>100</span>
-            <span>50</span>
-            <span>0</span>
-          </div>
-
-          <div className="chart-bars-area">
-            <div className="chart-grid-lines">
-              {[0, 1, 2, 3, 4, 5].map((line) => (
-                <span key={line} />
-              ))}
-            </div>
-
-            <div className="chart-columns">
-              {monthlyData.map((item) => (
-                <div className="chart-month" key={item.month}>
-                  <div className="chart-bar-pair">
-                    <div
-                      className="chart-bar created"
-                      style={{ height: `${(item.created / maxMonthly) * 100}%` }}
-                      title={`${item.created} criados`}
-                    />
-                    <div
-                      className="chart-bar completed"
-                      style={{ height: `${(item.completed / maxMonthly) * 100}%` }}
-                      title={`${item.completed} concluídos`}
-                    />
-                  </div>
-                  <span>{item.month}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <Chart
+          chartType="ColumnChart"
+          width="100%"
+          height="380px"
+          data={[
+            ['Semana', 'Criados', 'Concluídos'],
+            ...monthlyData.map((item) => [
+              item.month,
+              Number(item.created) || 0,
+              Number(item.completed) || 0,
+            ]),
+          ]}
+          options={{
+            backgroundColor: 'transparent',
+            colors: ['#73B9DD', '#65A889'],
+            legend: { position: 'top' },
+            tooltip: { trigger: 'focus' },
+            chartArea: {
+              width: '85%',
+              height: '75%',
+            },
+            vAxis: {
+              minValue: 0,
+              format: '0',
+              textStyle: {
+                color: '#777777',
+                fontSize: 12,
+              },
+              baselineColor: '#DCE3DA',
+              gridlines: {
+                color: '#E9EEE7',
+              },
+            },
+            bar: {
+              groupWidth: '55%',
+            },
+          }}
+        />
       </section>
 
-      {/* GRÁFICOS */}
+      {/* GRÁFICOS SECUNDÁRIOS */}
       <section className="dashboard-graphs-grid">
 
         {/* STATUS */}
@@ -181,7 +220,10 @@ export default function DashboardScreen() {
           <div className="dashboard-panel-heading">
             <div>
               <h2>Status dos indicadores</h2>
-              <p>Distribuição dos indicadores cadastrados.</p>
+
+              <p>
+                Distribuição dos indicadores ativos cadastrados.
+              </p>
             </div>
           </div>
 
@@ -189,27 +231,33 @@ export default function DashboardScreen() {
             <div
               className="dashboard-donut"
               style={{
-                background: `conic-gradient(
-                  ${status[0].color} 0% 68.2%,
-                  ${status[1].color} 68.2% 87.7%,
-                  ${status[2].color} 87.7% 100%
-                )`,
+                background: donutBackground,
               }}
             >
               <div className="dashboard-donut-center">
-                <strong>{totalIndicators.toLocaleString('pt-BR')}</strong>
+                <strong>
+                  {totalIndicators.toLocaleString('pt-BR')}
+                </strong>
+
                 <span>Indicadores</span>
               </div>
             </div>
 
             <div className="dashboard-status-legend">
               {status.map((item) => (
-                <div className="dashboard-status-item" key={item.name}>
+                <div
+                  className="dashboard-status-item"
+                  key={item.name}
+                >
                   <div>
                     <i style={{ background: item.color }} />
+
                     <span>{item.name}</span>
                   </div>
-                  <strong>{item.value}</strong>
+
+                  <strong>
+                    {item.value.toLocaleString('pt-BR')}
+                  </strong>
                 </div>
               ))}
             </div>
@@ -221,28 +269,41 @@ export default function DashboardScreen() {
           <div className="dashboard-panel-heading">
             <div>
               <h2>Indicadores por categoria</h2>
-              <p>Áreas mais acompanhadas pelos estudantes.</p>
+
+              <p>
+                Tipos de indicadores cadastrados pelos estudantes.
+              </p>
             </div>
           </div>
 
           <div className="dashboard-category-list">
-            {categories.map((category) => (
-              <div className="dashboard-category" key={category.name}>
-                <div className="dashboard-category-info">
-                  <span>{category.name}</span>
-                  <strong>{category.value}</strong>
-                </div>
+            {categories.length === 0 ? (
+              <p>Nenhum indicador cadastrado.</p>
+            ) : (
+              categories.map((category) => (
+                <div
+                  className="dashboard-category"
+                  key={category.name}
+                >
+                  <div className="dashboard-category-info">
+                    <span>{category.name}</span>
 
-                <div className="dashboard-progress">
-                  <span
-                    style={{
-                      width: `${(category.value / 320) * 100}%`,
-                      background: category.color,
-                    }}
-                  />
+                    <strong>
+                      {category.value.toLocaleString('pt-BR')}
+                    </strong>
+                  </div>
+
+                  <div className="dashboard-progress">
+                    <span
+                      style={{
+                        width: `${(category.value / maxCategory) * 100}%`,
+                        background: category.color,
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </article>
       </section>
@@ -252,19 +313,30 @@ export default function DashboardScreen() {
         <div className="dashboard-panel-heading">
           <div>
             <h2>Panorama do bem-estar</h2>
-            <p>Quantidade de registros realizados pelos estudantes.</p>
+
+            <p>
+              Quantidade de registros realizados pelos estudantes.
+            </p>
           </div>
         </div>
 
         <div className="dashboard-wellbeing-grid">
           {wellbeing.map((item) => (
-            <div className="dashboard-wellbeing-card" key={item.name}>
+            <div
+              className="dashboard-wellbeing-card"
+              key={item.name}
+            >
               <div className="dashboard-wellbeing-title">
-                <span className="wellbeing-emoji">{item.icon}</span>
+                <span className="wellbeing-emoji">
+                  {item.icon}
+                </span>
+
                 <span>{item.name}</span>
               </div>
 
-              <strong>{item.value.toLocaleString('pt-BR')}</strong>
+              <strong>
+                {item.value.toLocaleString('pt-BR')}
+              </strong>
 
               <div className="dashboard-progress">
                 <span
@@ -275,7 +347,11 @@ export default function DashboardScreen() {
                 />
               </div>
 
-              <small>{item.percentage}% do volume de referência</small>
+              <small>
+                {item.name === 'Hidratação'
+                  ? 'Registros de consumo de água'
+                  : 'Aguardando integração dos dados'}
+              </small>
             </div>
           ))}
         </div>
@@ -284,6 +360,7 @@ export default function DashboardScreen() {
       {/* RODAPÉ */}
       <footer className="dashboard-footer">
         <span>WHAT IF APP · Painel administrativo</span>
+        
       </footer>
     </div>
   );

@@ -1,0 +1,444 @@
+
+.group-details-page {
+  width: 100%;
+  padding: 28px;
+  color: #29332b;
+  box-sizing: border-box;
+}
+
+.group-details-loading {
+  padding: 40px;
+  text-align: center;
+  color: #68736a;
+}
+
+.group-back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  color: #52634f;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 24px;
+}
+
+.group-back-button:hover {
+  color: #71896a;
+}
+
+.group-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.group-details-eyebrow {
+  color: #788576;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.group-details-header h1 {
+  font-size: 28px;
+  margin: 8px 0;
+  color: #29332b;
+}
+
+.group-details-header p {
+  color: #7b847b;
+  font-size: 14px;
+  margin: 0;
+}
+
+.group-status {
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.group-status.active {
+  background: #e5f1e5;
+  color: #47734a;
+}
+
+.group-status.inactive {
+  background: #f2e8e5;
+  color: #a45b4d;
+}
+
+/* CARDS DE RESUMO */
+
+.group-details-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 26px;
+}
+
+.group-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 22px;
+  background: #fff;
+  border: 1px solid #edf0eb;
+  border-radius: 12px;
+  min-width: 0;
+}
+
+.group-summary-card span {
+  display: block;
+  color: #7b847b;
+  font-size: 13px;
+  margin-bottom: 7px;
+}
+
+.group-summary-card strong {
+  display: block;
+  color: #303b31;
+  font-size: 25px;
+}
+
+.group-summary-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.students-icon {
+  background: #edf1e9;
+  color: #526c4d;
+}
+
+.indicators-icon {
+  background: #edf1f5;
+  color: #5c748d;
+}
+
+.records-icon {
+  background: #f3eee5;
+  color: #987b4d;
+}
+
+/* SEÇÕES */
+
+.group-details-section {
+  background: #fff;
+  border: 1px solid #edf0eb;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 22px;
+  min-width: 0;
+}
+
+.group-section-heading {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.group-section-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  color: #303b31;
+  margin: 0 0 7px;
+}
+
+.group-section-heading p {
+  color: #899188;
+  font-size: 13px;
+  margin: 0;
+}
+
+.group-section-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 25px;
+  height: 25px;
+  padding: 0 7px;
+  border-radius: 20px;
+  background: #edf1e9;
+  color: #526c4d;
+  font-size: 12px;
+}
+
+/* GRÁFICO DE BARRAS VERTICAIS */
+
+.group-chart {
+  height: 260px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 20px;
+  padding: 20px 12px 0;
+  border-bottom: 1px solid #e9ede8;
+  overflow-x: auto;
+}
+
+.group-chart-item {
+  flex: 1;
+  height: 100%;
+  min-width: 65px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.group-chart-value {
+  color: #7b847b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.group-chart-column {
+  width: min(65%, 55px);
+  height: 165px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.group-chart-bar {
+  width: 100%;
+  min-height: 0;
+  background: #71896a;
+  border-radius: 6px 6px 0 0;
+  transition: height 0.3s ease;
+}
+
+.group-chart-label {
+  color: #899188;
+  font-size: 11px;
+  text-align: center;
+  padding: 5px 0;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+
+/* LISTA DE INDICADORES E ALUNOS */
+
+.group-indicators-list,
+.group-students-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.group-indicator-item,
+.group-student-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f2ee;
+}
+
+.group-indicator-item:last-child,
+.group-student-item:last-child {
+  border-bottom: none;
+}
+
+.group-indicator-icon,
+.group-student-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #edf1e9;
+  color: #60765b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.group-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+}
+
+.group-item-info strong {
+  font-size: 14px;
+  color: #39433a;
+}
+
+.group-item-info > span {
+  font-size: 12px;
+  color: #899188;
+}
+
+.group-indicator-records,
+.group-student-status {
+  color: #647b5d;
+  background: #edf2e9;
+  border-radius: 20px;
+  padding: 6px 11px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.group-student-email {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.group-empty-message {
+  padding: 22px 0;
+  text-align: center;
+  color: #899188;
+  font-size: 13px;
+}
+
+.group-details-error {
+  color: #b34c42;
+  background: #fff0ee;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+/* SELETOR DE MÊS */
+
+.group-month-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 6px 10px;
+  background: #f3f7f3;
+  border: 1px solid #e5ece4;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.group-month-selector span {
+  min-width: 145px;
+  text-align: center;
+  color: #43503e;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.group-month-selector button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #526c4d;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.group-month-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.group-month-selector button {
+  height: 44px;
+  min-width: 44px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid #e3e7e3;
+  border-radius: 12px;
+  color: #52634f;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.group-month-selector button:hover {
+  background: #f1f6f1;
+  border-color: #cbd8c9;
+}
+
+.group-month-selector .group-month-today {
+  min-width: 68px;
+  color: #43503e;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.group-month-selector button:hover {
+  background: #e1ebdf;
+}
+
+@media (max-width: 500px) {
+  .group-section-heading {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .group-month-selector {
+    align-self: flex-start;
+  }
+}
+
+/* RESPONSIVIDADE */
+
+@media (max-width: 800px) {
+  .group-details-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .group-details-page {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 500px) {
+  .group-details-header {
+    flex-direction: column;
+  }
+
+  .group-details-section {
+    padding: 17px;
+  }
+
+  .group-chart {
+    gap: 10px;
+    padding-inline: 4px;
+  }
+
+  .group-chart-label {
+    font-size: 10px;
+  }
+
+  .group-chart-column {
+    width: 70%;
+  }
+
+  .group-indicator-records,
+  .group-student-status {
+    font-size: 10px;
+    padding: 5px 8px;
+  }
+}

@@ -217,3 +217,19 @@ export async function rejectGroupRequest(requestId) {
     respondedAt: serverTimestamp(),
   });
 }
+
+
+// DESATIVAR OU REATIVAR UM GRUPO
+export async function updateGroupStatus(id, active) {
+  if (!id || typeof active !== 'boolean') {
+    throw new Error('Dados para atualização do grupo inválidos.');
+  }
+
+  const groupRef = doc(db, 'groups', id);
+
+  await updateDoc(groupRef, {
+    active,
+    updatedAt: serverTimestamp(),
+  });
+}
+
