@@ -4,7 +4,6 @@ import {
   ChartNoAxesCombined,
   Layers,
   LayoutDashboard,
-  Settings,
   Users
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
@@ -19,29 +18,24 @@ const menuItems = [
     icon: LayoutDashboard,
   },
   {
-    label: 'Estudantes',
-    path: '/students',
-    icon: Users,
-  },
-  {
     label: 'Grupos',
     path: '/groups',
     icon: Layers,
   },
-  {
+   {
     label: 'Oficinas',
     path: '/workshops',
     icon: BookOpen,
   },
   {
+    label: 'Estudantes',
+    path: '/students',
+    icon: Users,
+  },
+  {
     label: 'Relatórios',
     path: '/reports',
     icon: ChartNoAxesCombined,
-  },
-  {
-    label: 'Configurações',
-    path: '/settings',
-    icon: Settings,
   },
 ];
 

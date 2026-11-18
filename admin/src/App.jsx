@@ -8,6 +8,8 @@ import GroupsScreen from './features/groups/views/GroupsScreen';
 import ProfileScreen from './features/profile/views/ProfileScreen';
 import WorkshopsScreen from './features/workshops/views/WorkshopsScreen';
 import AdminLayout from './shared/components/Layout/AdminLayout';
+import GroupDetailsScreen from './features/groups/views/GroupDetailsScreen';
+import ReportsScreen from './features/reports/views/ReportsScreen';
 
 import ProtectedRoute from './features/auth/components/ProtectedRoute';
 import { AuthProvider } from './features/auth/contexts/AuthContext';
@@ -38,9 +40,10 @@ function App() {
               <Route path="students" element={<ComingSoon title="Estudantes" />} />
               <Route path="groups" element={<GroupsScreen />} />
               <Route path="groups/create" element={<CreateGroupScreen />} />
+              <Route path="groups/:groupId" element={<GroupDetailsScreen />} />
               <Route path="groups/:groupId/edit" element={<EditGroupScreen />} />
               <Route path="workshops" element={<WorkshopsScreen />} />
-              <Route path="reports" element={<ComingSoon title="Relatórios" />} />
+              <Route path="reports" element={<ReportsScreen />} />
               <Route path="settings" element={<ComingSoon title="Configurações" />} />
               <Route path="profile" element={<ProfileScreen />} />
             </Route>

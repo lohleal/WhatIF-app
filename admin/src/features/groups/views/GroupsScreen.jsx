@@ -3,26 +3,64 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import {
-  Users,
-  Layers,
+  Check,
   Clock,
+  Eye,
+  Layers,
+  Pencil,
   Plus,
   Search,
-  Pencil,
+  UserRound,
+  Users,
+  X,
 } from 'lucide-react';
 
-import { getActiveGroups } from '../services/groupService';
+import {
+  approveGroupRequest,
+  getActiveGroups,
+  getPendingGroupRequests,
+  rejectGroupRequest,
+} from '../services/groupService';
 
 import './GroupsScreen.css';
+
+function formatRequestDate(timestamp) {
+  if (!timestamp) return 'Data não disponível';
+
+  const date = timestamp.toDate
+    ? timestamp.toDate()
+    : new Date(timestamp);
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Data não disponível';
+  }
+
+  return date.toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 export default function GroupsScreen() {
   const navigate = useNavigate();
 
   const [groups, setGroups] = useState([]);
-  const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [requests, setRequests] = useState([]);
 
+  const [search, setSearch] = useState('');
+
+  const [loading, setLoading] = useState(true);
+  const [loadingRequests, setLoadingRequests] = useState(true);
+
+  const [error, setError] = useState('');
+  const [requestError, setRequestError] = useState('');
+
+  const [processingRequestId, setProcessingRequestId] = useState(null);
+
+  // CARREGAR GRUPOS
   useEffect(() => {
     async function loadGroups() {
       try {
@@ -42,12 +80,36 @@ export default function GroupsScreen() {
     loadGroups();
   }, []);
 
+  // CARREGAR SOLICITAÇÕES PENDENTES
+  async function loadRequests() {
+    try {
+      setLoadingRequests(true);
+      setRequestError('');
+
+      const pendingRequests = await getPendingGroupRequests();
+      setRequests(pendingRequests);
+    } catch (err) {
+      console.error('Erro ao buscar solicitações:', err);
+      setRequestError(
+        'Não foi possível carregar as solicitações de entrada.'
+      );
+    } finally {
+      setLoadingRequests(false);
+    }
+  }
+
+  useEffect(() => {
+    loadRequests();
+  }, []);
+
+  // TOTAL DE ENCONTROS
   const totalMeetings = groups.reduce(
     (total, group) =>
       total + (Array.isArray(group.schedule) ? group.schedule.length : 0),
     0
   );
 
+  // FILTRAR GRUPOS
   const filteredGroups = useMemo(() => {
     const term = search.trim().toLowerCase();
 
@@ -65,6 +127,66 @@ export default function GroupsScreen() {
         .includes(term);
     });
   }, [groups, search]);
+
+  // APROVAR SOLICITAÇÃO
+  async function handleApprove(request) {
+    const confirmed = window.confirm(
+      `Deseja aprovar a entrada de ${request.studentName} no grupo ${request.groupName}?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setProcessingRequestId(request.id);
+      setRequestError('');
+
+      await approveGroupRequest(
+        request.id,
+        request.userId,
+        request.groupId
+      );
+
+      setRequests((current) =>
+        current.filter((item) => item.id !== request.id)
+      );
+    } catch (err) {
+      console.error('Erro ao aprovar solicitação:', err);
+
+      setRequestError(
+        err.message || 'Não foi possível aprovar a solicitação.'
+      );
+    } finally {
+      setProcessingRequestId(null);
+    }
+  }
+
+  // RECUSAR SOLICITAÇÃO
+  async function handleReject(request) {
+    const confirmed = window.confirm(
+      `Deseja recusar a solicitação de ${request.studentName}?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setProcessingRequestId(request.id);
+      setRequestError('');
+
+      await rejectGroupRequest(request.id);
+
+      setRequests((current) =>
+        current.filter((item) => item.id !== request.id)
+      );
+    } catch (err) {
+      console.error('Erro ao recusar solicitação:', err);
+
+      setRequestError(
+        err.message || 'Não foi possível recusar a solicitação.'
+      );
+    } finally {
+      setProcessingRequestId(null);
+    }
+  }
 
   return (
     <div className="groups-screen">
@@ -124,6 +246,113 @@ export default function GroupsScreen() {
 
       </section>
 
+      {/* SOLICITAÇÕES DE ENTRADA */}
+      <section className="groups-panel">
+
+        <div className="groups-list-heading">
+          <div>
+            <h2>Solicitações de entrada</h2>
+            <p>
+              Analise os pedidos dos alunos para participar dos grupos.
+            </p>
+          </div>
+
+          <span className="groups-total">
+            {loadingRequests ? '...' : `${requests.length} pendentes`}
+          </span>
+        </div>
+
+        {requestError && (
+          <p className="groups-error">
+            {requestError}
+          </p>
+        )}
+
+        {loadingRequests ? (
+          <p className="groups-empty">
+            Carregando solicitações...
+          </p>
+        ) : requests.length === 0 && !requestError ? (
+          <div className="groups-requests-empty">
+            <Users size={25} />
+            <strong>Nenhuma solicitação pendente</strong>
+            <span>
+              Quando um aluno solicitar entrada em um grupo,
+              o pedido aparecerá aqui.
+            </span>
+          </div>
+        ) : (
+          <div className="groups-requests-list">
+
+            {requests.map((request) => {
+              const processing =
+                processingRequestId === request.id;
+
+              return (
+                <div
+                  className="groups-request-card"
+                  key={request.id}
+                >
+
+                  <div className="groups-request-student">
+                    <div className="groups-request-avatar">
+                      <UserRound size={20} />
+                    </div>
+
+                    <div className="groups-request-info">
+                      <strong>{request.studentName}</strong>
+
+                      <span>
+                        {request.studentEmail || 'E-mail não informado'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="groups-request-details">
+                    <span>Grupo solicitado</span>
+                    <strong>{request.groupName}</strong>
+                  </div>
+
+                  <div className="groups-request-details">
+                    <span>Data da solicitação</span>
+                    <strong>
+                      {formatRequestDate(request.requestedAt)}
+                    </strong>
+                  </div>
+
+                  <div className="groups-request-actions">
+
+                    <button
+                      type="button"
+                      className="groups-approve-button"
+                      onClick={() => handleApprove(request)}
+                      disabled={processing || processingRequestId !== null}
+                    >
+                      <Check size={15} />
+                      {processing ? 'Processando...' : 'Aprovar'}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="groups-reject-button"
+                      onClick={() => handleReject(request)}
+                      disabled={processing || processingRequestId !== null}
+                    >
+                      <X size={15} />
+                      Recusar
+                    </button>
+
+                  </div>
+
+                </div>
+              );
+            })}
+
+          </div>
+        )}
+
+      </section>
+
       {/* LISTAGEM DOS GRUPOS */}
       <section className="groups-panel">
 
@@ -175,6 +404,7 @@ export default function GroupsScreen() {
 
               <tbody>
                 {filteredGroups.map((group) => (
+
                   <tr key={group.id}>
 
                     <td>
@@ -209,18 +439,31 @@ export default function GroupsScreen() {
                     </td>
 
                     <td>
-                      <button
-                        type="button"
-                        className="groups-edit-button"
-                        onClick={() =>
-                          navigate(`/groups/${group.id}/edit`)
-                        }
-                        title={`Editar ${group.name}`}
-                        aria-label={`Editar ${group.name}`}
-                      >
-                        <Pencil size={15} />
-                        Editar
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+
+                        <button
+                          type="button"
+                          className="groups-edit-button"
+                          onClick={() => navigate(`/groups/${group.id}`)}
+                          title={`Ver detalhes de ${group.name}`}
+                          aria-label={`Ver detalhes de ${group.name}`}
+                        >
+                          <Eye size={15} />
+                          Detalhes
+                        </button>
+
+                        <button
+                          type="button"
+                          className="groups-edit-button"
+                          onClick={() => navigate(`/groups/${group.id}/edit`)}
+                          title={`Editar ${group.name}`}
+                          aria-label={`Editar ${group.name}`}
+                        >
+                          <Pencil size={15} />
+                          Editar
+                        </button>
+
+                      </div>
                     </td>
 
                   </tr>
