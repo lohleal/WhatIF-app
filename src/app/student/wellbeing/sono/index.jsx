@@ -102,20 +102,9 @@ export default function Sono() {
                                 strokeWidth={12}
                                 fill="transparent"
                                 strokeLinecap="round"
-                                strokeDasharray={
-                                    circumference
-                                }
-                                strokeDashoffset={
-                                    circumference *
-                                    (1 - progress)
-                                }
-                                rotation="-90"
-                                originX={
-                                    progressSize / 2
-                                }
-                                originY={
-                                    progressSize / 2
-                                }
+                                strokeDasharray={`${circumference} ${circumference}`}
+                                strokeDashoffset={circumference * (1 - progress)}
+                                transform={`rotate(-90 ${progressSize / 2} ${progressSize / 2})`}
                             />
                         </Svg>
 

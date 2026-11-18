@@ -1,9 +1,10 @@
 
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
+    Alert,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -15,6 +16,12 @@ import {
 
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { auth } from '../../../../services/firebase/firebaseConfig';
+
+import {
+    buscarObjetivoSono,
+    salvarObjetivoSono,
+} from '../../../../features/wellbeing/services/sleepObjectiveService';
 
 const PURPLE = '#B37BC9';
 const DARK_PURPLE = '#704486';
@@ -24,6 +31,7 @@ const MUTED = '#95869D';
 const WHITE = '#FFFFFF';
 
 const objetivos = [6, 7, 8, 9, 10];
+
 
 export default function ObjetivoSono() {
     const router = useRouter();
@@ -38,20 +46,80 @@ export default function ObjetivoSono() {
     const [mostrarSeletorHorario, setMostrarSeletorHorario] =
         useState(false);
 
-    const objetivo = Number(objetivoTexto.replace(',', '.'));
+    const [carregando, setCarregando] = useState(true);
+
+    // Carregar configurações salvas no Firestore
+    useEffect(() => {
+        async function carregarConfiguracoes() {
+            try {
+                const userId = auth.currentUser?.uid;
+
+                if (!userId) {
+                    Alert.alert(
+                        'Atenção',
+                        'Você precisa estar autenticado para acessar suas configurações.'
+                    );
+                    return;
+                }
+
+                const dados = await buscarObjetivoSono(userId);
+
+                if (dados) {
+                    setObjetivoTexto(
+                        String(dados.dailyGoalHours ?? 8)
+                    );
+
+                    setNotificacao(
+                        dados.notificationsEnabled ?? true
+                    );
+
+                    if (dados.reminderTime) {
+                        const [horas, minutos] = dados.reminderTime
+                            .split(':')
+                            .map(Number);
+
+                        const horario = new Date();
+                        horario.setHours(horas, minutos, 0, 0);
+
+                        setHorarioSelecionado(horario);
+                    }
+                }
+            } catch (error) {
+                console.error(
+                    'Erro ao carregar configurações:',
+                    error
+                );
+
+                Alert.alert(
+                    'Erro',
+                    'Não foi possível carregar suas configurações de sono.'
+                );
+            } finally {
+                setCarregando(false);
+            }
+        }
+
+        carregarConfiguracoes();
+    }, []);
+
+    const objetivo = Number(
+        objetivoTexto.replace(',', '.')
+    );
 
     function alterarObjetivo(valor) {
-    const limpo = valor.replace(/[^0-9,\.]/g, '').replace('.', ',');
+        const limpo = valor
+            .replace(/[^0-9,\\.]/g, '')
+            .replace('.', ',');
 
-    const partes = limpo.split(',');
+        const partes = limpo.split(',');
 
-    const valorFinal =
-        partes.length > 1
-            ? partes[0] + ',' + partes.slice(1).join('')
-            : limpo;
+        const valorFinal =
+            partes.length > 1
+                ? partes[0] + ',' + partes.slice(1).join('')
+                : limpo;
 
-    setObjetivoTexto(valorFinal);
-}
+        setObjetivoTexto(valorFinal);
+    }
 
     function atualizarHorario(event, dataEscolhida) {
         setMostrarSeletorHorario(false);
@@ -61,19 +129,67 @@ export default function ObjetivoSono() {
         }
     }
 
-    function salvarConfiguracoes() {
-    const objetivo = Number(objetivoTexto.replace(',', '.'));
+    // Salvar configurações no Firestore
 
-    if (
-        !objetivoTexto ||
-        !Number.isFinite(objetivo) ||
-        objetivo <= 0
-    ) {
-        return;
+    async function salvarConfiguracoes() {
+        console.log('1. Iniciando salvamento...');
+
+        const objetivoAtual = Number(
+            objetivoTexto.replace(',', '.')
+        );
+
+        console.log('2. Objetivo:', objetivoAtual);
+        console.log('3. Notificações:', notificacao);
+
+        if (
+            !objetivoTexto ||
+            !Number.isFinite(objetivoAtual) ||
+            objetivoAtual <= 0 ||
+            objetivoAtual > 24
+        ) {
+            console.log('ERRO: objetivo inválido');
+            return;
+        }
+
+        try {
+            const userId = auth.currentUser?.uid;
+
+            console.log('4. UID do usuário:', userId);
+
+            if (!userId) {
+                console.log('ERRO: usuário não autenticado');
+                return;
+            }
+
+            const reminderTime = horarioSelecionado.toLocaleTimeString(
+                'pt-BR',
+                {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                }
+            );
+
+            console.log('5. Horário:', reminderTime);
+            console.log('6. Enviando dados ao Firestore...');
+
+            await salvarObjetivoSono(userId, {
+                dailyGoalHours: objetivoAtual,
+                notificationsEnabled: notificacao,
+                reminderTime,
+            });
+
+            console.log('7. OBJETIVO SALVO COM SUCESSO!');
+
+            router.replace('/student/wellbeing/sono');
+
+        } catch (error) {
+            console.error('ERRO AO SALVAR OBJETIVO:', error);
+            console.error('Código do erro:', error.code);
+            console.error('Mensagem:', error.message);
+        }
     }
 
-    router.back();
-}
 
     const horarioFormatado = horarioSelecionado.toLocaleTimeString(
         'pt-BR',
@@ -93,7 +209,7 @@ export default function ObjetivoSono() {
                 <View style={styles.header}>
                     <Pressable
                         style={styles.backButton}
-                        onPress={() => router.back()}
+                        onPress={() => router.replace('/student/wellbeing/sono')}
                     >
                         <Ionicons
                             name="arrow-back"
@@ -174,14 +290,14 @@ export default function ObjetivoSono() {
                                     style={[
                                         styles.goalButton,
                                         selecionado &&
-                                            styles.goalButtonActive,
+                                        styles.goalButtonActive,
                                     ]}
                                 >
                                     <Text
                                         style={[
                                             styles.goalButtonText,
                                             selecionado &&
-                                                styles.goalButtonTextActive,
+                                            styles.goalButtonTextActive,
                                         ]}
                                     >
                                         {valor} horas
