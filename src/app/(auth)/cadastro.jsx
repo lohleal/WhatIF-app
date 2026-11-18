@@ -6,6 +6,7 @@ import {
     Image,
     ImageBackground,
     KeyboardAvoidingView,
+    Modal,
     Platform,
     Pressable,
     ScrollView,
@@ -20,6 +21,8 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../constants/colors';
 import useAuthViewModel from '../../features/auth/viewmodels/useAuthViewModel';
+import { buscarGruposAtivos } from '../../features/groups/services/groupService';
+import { solicitarEntradaGrupo } from '../../features/groups/services/groupRequestService';
 
 export default function Cadastro() {
     const { cadastro, loading, erro } = useAuthViewModel();
@@ -32,6 +35,11 @@ export default function Cadastro() {
     const [telefone, setTelefone] = useState('');
     const [senha, setSenha] = useState('');
     const [confirmarSenha, setConfirmarSenha] = useState('');
+    const [grupos, setGrupos] = useState([]);
+    const [grupoSelecionado, setGrupoSelecionado] = useState(null);
+    const [modalGruposVisible, setModalGruposVisible] = useState(false);
+    const [loadingGrupos, setLoadingGrupos] = useState(false);
+    const [continuarSemEquipe, setContinuarSemEquipe] = useState(false);
 
     const { width, height } = useWindowDimensions();
 
@@ -46,6 +54,28 @@ export default function Cadastro() {
         27,
         Math.min(34, width * 0.082)
     );
+
+    async function handleAbrirGrupos() {
+        try {
+            setLoadingGrupos(true);
+
+            const listaGrupos = await buscarGruposAtivos();
+
+            setGrupos(listaGrupos);
+            setModalGruposVisible(true);
+
+        } catch (error) {
+            console.error('Erro ao buscar grupos:', error);
+
+            Alert.alert(
+                'Erro',
+                'Não foi possível carregar os grupos. Tente novamente.'
+            );
+        } finally {
+            setLoadingGrupos(false);
+        }
+    }
+
 
     async function handleCadastro() {
         if (
@@ -69,18 +99,62 @@ export default function Cadastro() {
         }
 
         try {
-            await cadastro(nome, sobrenome, email, telefone, senha);
-
-            Alert.alert(
-                'Cadastro realizado!',
-                'Sua conta foi criada com sucesso.'
+            const usuario = await cadastro(
+                nome,
+                sobrenome,
+                email,
+                telefone,
+                senha
             );
 
-            router.replace('/login');
+            if (grupoSelecionado) {
+                try {
+                    await solicitarEntradaGrupo(grupoSelecionado.id);
+
+                    Alert.alert(
+                        'Cadastro realizado!',
+                        'Sua conta foi criada e sua solicitação de entrada no grupo foi enviada. Aguarde a aprovação do administrador.',
+                        [
+                            {
+                                text: 'OK',
+                                onPress: () => router.replace('/login'),
+                            },
+                        ]
+                    );
+                } catch (errorSolicitacao) {
+                    console.error(
+                        'Erro ao enviar solicitação:',
+                        errorSolicitacao
+                    );
+
+                    Alert.alert(
+                        'Cadastro realizado!',
+                        'Sua conta foi criada, mas não foi possível enviar a solicitação de entrada no grupo. Você poderá tentar novamente depois.',
+                        [
+                            {
+                                text: 'OK',
+                                onPress: () => router.replace('/login'),
+                            },
+                        ]
+                    );
+                }
+            } else {
+                Alert.alert(
+                    'Cadastro realizado!',
+                    'Sua conta foi criada com sucesso. Você pode continuar sem equipe e solicitar entrada em um grupo posteriormente.',
+                    [
+                        {
+                            text: 'OK',
+                            onPress: () => router.replace('/login'),
+                        },
+                    ]
+                );
+            }
         } catch (error) {
-            // A mensagem será exibida pela variável erro na interface.
+            // O ViewModel já apresenta a mensagem de erro.
         }
     }
+
 
     function handlePasswordFocus() {
         setTimeout(() => {
@@ -209,15 +283,116 @@ export default function Cadastro() {
                                     returnKeyType="next"
                                 />
 
-                                <Pressable style={styles.input}>
+                                <Pressable
+                                    style={styles.input}
+                                    onPress={handleAbrirGrupos}
+                                    disabled={loadingGrupos}
+                                >
                                     <Text style={styles.selectPlaceholder}>
-                                        Selecione sua equipe
+                                        {loadingGrupos
+                                            ? 'Carregando grupos...'
+                                            : grupoSelecionado
+                                                ? grupoSelecionado.name
+                                                : continuarSemEquipe
+                                                    ? 'Continuar sem equipe'
+                                                    : 'Selecione sua equipe'}
                                     </Text>
 
                                     <Text style={styles.selectArrow}>
                                         ↓
                                     </Text>
                                 </Pressable>
+                                <Modal
+                                    visible={modalGruposVisible}
+                                    transparent
+                                    animationType="fade"
+                                    onRequestClose={() => setModalGruposVisible(false)}
+                                >
+                                    <View style={styles.modalOverlay}>
+                                        <View style={styles.modalContainer}>
+
+                                            <Text style={styles.modalTitle}>
+                                                Selecione sua equipe
+                                            </Text>
+
+                                            <Text style={styles.modalDescription}>
+                                                Escolha o grupo ao qual deseja solicitar entrada.
+                                            </Text>
+
+                                            <ScrollView
+                                                style={styles.groupsScroll}
+                                                showsVerticalScrollIndicator={true}
+                                                nestedScrollEnabled
+                                                keyboardShouldPersistTaps="handled"
+                                            >
+                                                <Pressable
+                                                    style={[
+                                                        styles.groupOption,
+                                                        continuarSemEquipe && styles.groupOptionSelected,
+                                                    ]}
+                                                    onPress={() => {
+                                                        setGrupoSelecionado(null);
+                                                        setContinuarSemEquipe(true);
+                                                        setModalGruposVisible(false);
+                                                    }}
+                                                >
+                                                    <Text style={styles.groupName}>
+                                                        Continuar sem equipe
+                                                    </Text>
+
+                                                    <Text style={styles.groupDescription}>
+                                                        Você pode participar de um grupo posteriormente.
+                                                    </Text>
+                                                </Pressable>
+                                                {grupos.length === 0 ? (
+                                                    <Text style={styles.emptyGroups}>
+                                                        Nenhum grupo ativo disponível no momento.
+                                                    </Text>
+                                                ) : (
+                                                    grupos.map((grupo) => (
+                                                        <Pressable
+                                                            key={grupo.id}
+                                                            style={[
+                                                                styles.groupOption,
+                                                                grupoSelecionado?.id === grupo.id &&
+                                                                styles.groupOptionSelected,
+                                                            ]}
+                                                            onPress={() => {
+                                                                setGrupoSelecionado(grupo);
+                                                                setContinuarSemEquipe(false);
+                                                                setModalGruposVisible(false);
+                                                            }}
+                                                        >
+                                                            <Text style={styles.groupName}>
+                                                                {grupo.name}
+                                                            </Text>
+
+                                                            {grupo.schedule && (
+                                                                <Text style={styles.groupSchedule}>
+                                                                    {Array.isArray(grupo.schedule)
+                                                                        ? grupo.schedule.map((horario) =>
+                                                                            `${horario.day} - ${horario.startTime} às ${horario.endTime}`
+                                                                        ).join('\n')
+                                                                        : `${grupo.schedule.day} - ${grupo.schedule.startTime} às ${grupo.schedule.endTime}`}
+                                                                </Text>
+                                                            )}
+                                                        </Pressable>
+                                                    ))
+                                                )}
+                                            </ScrollView>
+
+                                            <Pressable
+                                                style={styles.closeModalButton}
+                                                onPress={() => setModalGruposVisible(false)}
+                                            >
+                                                <Text style={styles.closeModalText}>
+                                                    Fechar
+                                                </Text>
+                                            </Pressable>
+
+                                        </View>
+                                    </View>
+                                </Modal>
 
                                 <TextInput
                                     style={styles.input}
@@ -472,5 +647,90 @@ const styles = StyleSheet.create({
     footerHighlight: {
         color: COLORS.primary,
         fontWeight: '600',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+
+    modalContainer: {
+        width: '100%',
+        maxWidth: 420,
+        maxHeight: '80%',
+        flexShrink: 1,
+        backgroundColor: COLORS.surface,
+        borderRadius: 24,
+        padding: 22,
+    },
+
+    modalTitle: {
+        fontSize: 21,
+        fontWeight: '700',
+        color: COLORS.text,
+        textAlign: 'center',
+    },
+
+    modalDescription: {
+        fontSize: 14,
+        color: COLORS.textSecondary,
+        textAlign: 'center',
+        marginTop: 8,
+        marginBottom: 20,
+    },
+
+    emptyGroups: {
+        color: COLORS.textSecondary,
+        textAlign: 'center',
+        marginVertical: 20,
+    },
+
+    groupOption: {
+        padding: 16,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderRadius: 15,
+        marginBottom: 10,
+    },
+
+    groupOptionSelected: {
+        borderColor: COLORS.primary,
+        backgroundColor: '#EAF1E8',
+    },
+
+    groupName: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.text,
+    },
+
+    groupDescription: {
+        fontSize: 13,
+        color: COLORS.textSecondary,
+        marginTop: 5,
+    },
+
+    groupSchedule: {
+        fontSize: 12,
+        color: COLORS.primary,
+        marginTop: 5,
+    },
+
+    closeModalButton: {
+        marginTop: 12,
+        alignItems: 'center',
+        padding: 12,
+    },
+
+    closeModalText: {
+        color: COLORS.primary,
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    groupsScroll: {
+        flexShrink: 1,
+        maxHeight: 400,
     },
 });
