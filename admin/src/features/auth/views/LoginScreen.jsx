@@ -1,5 +1,9 @@
 
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import {
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from 'firebase/auth';
+
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useState } from 'react';
 
@@ -16,7 +20,9 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
 
   if (authLoading) {
     return <div className="login-loading">Verificando acesso...</div>;
@@ -30,6 +36,7 @@ export default function LoginScreen() {
   async function handleLogin(event) {
     event.preventDefault();
     setError('');
+    setResetMessage('');
 
     if (!email.trim() || !password) {
       setError('Preencha seu e-mail e sua senha.');
@@ -74,6 +81,45 @@ export default function LoginScreen() {
     }
   }
 
+  async function handlePasswordRecovery() {
+    setError('');
+    setResetMessage('');
+
+    if (!email.trim()) {
+      setError('Informe seu e-mail para receber o link de recuperação.');
+      return;
+    }
+
+    try {
+      setResetLoading(true);
+
+      auth.languageCode = 'pt-BR';
+
+      await sendPasswordResetEmail(auth, email.trim());
+
+      setResetMessage(
+        'Se houver uma conta cadastrada com esse e-mail, você receberá as instruções para redefinir sua senha. Verifique também a caixa de spam.'
+      );
+    } catch (error) {
+      console.error('Erro ao solicitar recuperação de senha:', error);
+
+      const messages = {
+        'auth/invalid-email': 'Informe um endereço de e-mail válido.',
+        'auth/too-many-requests':
+          'Muitas solicitações. Aguarde um pouco antes de tentar novamente.',
+        'auth/network-request-failed':
+          'Verifique sua conexão com a internet e tente novamente.',
+      };
+
+      setError(
+        messages[error.code] ||
+          'Não foi possível solicitar a recuperação. Tente novamente.'
+      );
+    } finally {
+      setResetLoading(false);
+    }
+  }
+
   return (
     <main className="login-page">
       <section className="login-card">
@@ -94,14 +140,19 @@ export default function LoginScreen() {
         <form onSubmit={handleLogin}>
           <div className="login-field">
             <label htmlFor="email">E-mail</label>
+
             <div className="login-input-wrapper">
               <Mail size={19} />
+
               <input
                 id="email"
                 type="email"
                 placeholder="Digite seu e-mail"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  setResetMessage('');
+                }}
                 autoComplete="username"
                 required
               />
@@ -110,8 +161,10 @@ export default function LoginScreen() {
 
           <div className="login-field">
             <label htmlFor="password">Senha</label>
+
             <div className="login-input-wrapper">
               <Lock size={19} />
+
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
@@ -131,6 +184,15 @@ export default function LoginScreen() {
                 {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
               </button>
             </div>
+
+            <button
+              type="button"
+              className="login-forgot-password"
+              onClick={handlePasswordRecovery}
+              disabled={resetLoading}
+            >
+              {resetLoading ? 'Enviando...' : 'Esqueci minha senha'}
+            </button>
           </div>
 
           {error && (
@@ -139,10 +201,16 @@ export default function LoginScreen() {
             </div>
           )}
 
+          {resetMessage && (
+            <div className="login-reset-message" role="status">
+              {resetMessage}
+            </div>
+          )}
+
           <button
             type="submit"
             className="login-submit"
-            disabled={loading}
+            disabled={loading || resetLoading}
           >
             {loading ? 'Entrando...' : 'Entrar no painel'}
           </button>
