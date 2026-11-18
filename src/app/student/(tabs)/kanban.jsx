@@ -1,5 +1,5 @@
-
-import React, { useState } from 'react';
+import { db } from '../../../services/firebase/firebaseConfig';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     View,
     Text,
@@ -11,10 +11,20 @@ import {
     KeyboardAvoidingView,
     Platform,
     SafeAreaView,
+    Animated,
+    PanResponder,
+    Alert,
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../../constants/colors';
+import { useAuth } from '../../../features/auth/context/AuthContext';
+import {
+    ouvirTarefas,
+    criarTarefa,
+    atualizarTarefa,
+    excluirTarefa,
+} from '../../../features/kanban/services/kanbanService';
 
 const POST_IT_COLORS = [
     '#FFF1D6',
@@ -30,40 +40,95 @@ const COLUMNS = [
     { id: 'done', title: 'Feito' },
 ];
 
-const INITIAL_TASKS = [
-    {
-        id: '1',
-        title: 'Estudar matemática',
-        description: 'Revisar funções do primeiro e segundo grau e resolver os exercícios da apostila.',
-        status: 'todo',
-        color: '#FFF1D6',
-    },
-    {
-        id: '2',
-        title: 'Organizar minha rotina',
-        description: 'Separar os horários de estudo, descanso e atividades da semana.',
-        status: 'todo',
-        color: '#DCEFF5',
-    },
-    {
-        id: '3',
-        title: 'Finalizar trabalho de biologia',
-        description: 'Concluir a pesquisa e revisar o conteúdo antes de entregar.',
-        status: 'doing',
-        color: '#E8E2F7',
-    },
-    {
-        id: '4',
-        title: 'Organizar materiais',
-        description: 'Separar os arquivos e cadernos das matérias.',
-        status: 'done',
-        color: '#E3F0DD',
-    },
-];
-
 export default function Kanban() {
-    const [tasks, setTasks] = useState(INITIAL_TASKS);
+    const { usuario, carregando: carregandoAuth } = useAuth();
+    const [tasks, setTasks] = useState([]);
+    const [archivedTasks, setArchivedTasks] = useState([]);
+    const [carregandoTarefas, setCarregandoTarefas] = useState(true);
+
+    // Escuta em tempo real apenas as tarefas do estudante autenticado.
+    useEffect(() => {
+        if (carregandoAuth) return;
+
+        if (!usuario?.uid) {
+            setTasks([]);
+            setArchivedTasks([]);
+            setCarregandoTarefas(false);
+            return;
+        }
+
+        setCarregandoTarefas(true);
+
+        console.log('[KANBAN] UID recebido:', usuario.uid);
+        console.log('[KANBAN] UID esperado:', 'v2yjFfwFK1adw6MWyGeAx3DdUSe2');
+        console.log('[KANBAN] Projeto Firebase:', db.app.options.projectId);
+
+        const cancelar = ouvirTarefas(
+            usuario.uid,
+            (tarefas) => {
+                setTasks(tarefas.filter((task) => task.status !== 'archived'));
+                setArchivedTasks(tarefas.filter((task) => task.status === 'archived'));
+                setCarregandoTarefas(false);
+            },
+            (error) => {
+                console.error('[Kanban] Erro ao carregar tarefas:', error);
+                Alert.alert('Erro', 'Não foi possível carregar suas atividades.');
+                setCarregandoTarefas(false);
+            }
+        );
+
+        return cancelar;
+    }, [usuario?.uid, carregandoAuth]);
+
+    // Arquiva tarefas concluídas após 7 dias. A verificação ocorre ao abrir
+    // o quadro e enquanto a tela estiver aberta.
+    useEffect(() => {
+        if (!usuario?.uid || carregandoTarefas) return;
+
+        const arquivarTarefasVencidas = async () => {
+            const agora = Date.now();
+            const vencidas = tasks.filter(
+                (task) =>
+                    task.status === 'done' &&
+                    task.completedAt &&
+                    agora - task.completedAt >= 7 * 24 * 60 * 60 * 1000
+            );
+
+            for (const task of vencidas) {
+                try {
+                    await atualizarTarefa(usuario.uid, task.id, {
+                        status: 'archived',
+                        archivedAt: agora,
+                    });
+                } catch (error) {
+                    console.error('[Kanban] Erro ao arquivar tarefa:', error);
+                }
+            }
+        };
+
+        arquivarTarefasVencidas();
+        const interval = setInterval(arquivarTarefasVencidas, 60 * 1000);
+        return () => clearInterval(interval);
+    }, [tasks, usuario?.uid, carregandoTarefas]);
+
     const [activeColumn, setActiveColumn] = useState('todo');
+    const [boardWidth, setBoardWidth] = useState(0);
+    const [tabsWidth, setTabsWidth] = useState(0);
+    const scrollX = useRef(new Animated.Value(0)).current;
+    const currentPage = useRef(0);
+    const boardWidthRef = useRef(0);
+    const pageTranslateX = scrollX.interpolate({
+        inputRange: [0, boardWidth || 1, (boardWidth || 1) * 2],
+        outputRange: [0, -(boardWidth || 1), -2 * (boardWidth || 1)],
+        extrapolate: 'clamp',
+    });
+
+    const tabWidth = Math.max((tabsWidth - 8) / COLUMNS.length, 0);
+    const indicatorTranslateX = scrollX.interpolate({
+        inputRange: [0, boardWidth || 1, (boardWidth || 1) * 2],
+        outputRange: [0, tabWidth, tabWidth * 2],
+        extrapolate: 'clamp',
+    });
 
     const [modalVisible, setModalVisible] = useState(false);
     const [modalMode, setModalMode] = useState('detail');
@@ -72,13 +137,39 @@ export default function Kanban() {
     const [taskTitle, setTaskTitle] = useState('');
     const [taskDescription, setTaskDescription] = useState('');
 
-    const currentColumn = COLUMNS.find(
-        (column) => column.id === activeColumn
-    );
+    function goToColumn(index) {
+        if (!boardWidth) return;
+        const safeIndex = Math.max(0, Math.min(index, COLUMNS.length - 1));
+        currentPage.current = safeIndex;
+        setActiveColumn(COLUMNS[safeIndex].id);
+        Animated.timing(scrollX, {
+            toValue: safeIndex * boardWidth,
+            duration: 320,
+            useNativeDriver: false,
+        }).start();
+    }
 
-    const filteredTasks = tasks.filter(
-        (task) => task.status === activeColumn
-    );
+    const pagerResponder = useRef(
+        PanResponder.create({
+            onMoveShouldSetPanResponder: (_, gesture) =>
+                Math.abs(gesture.dx) > 12 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.2,
+            onPanResponderRelease: (_, gesture) => {
+                if (Math.abs(gesture.dx) < 35) return;
+                const nextPage = gesture.dx < 0
+                    ? Math.min(currentPage.current + 1, COLUMNS.length - 1)
+                    : Math.max(currentPage.current - 1, 0);
+                const width = boardWidthRef.current;
+                if (!width) return;
+                currentPage.current = nextPage;
+                setActiveColumn(COLUMNS[nextPage].id);
+                Animated.timing(scrollX, {
+                    toValue: nextPage * width,
+                    duration: 320,
+                    useNativeDriver: false,
+                }).start();
+            },
+        })
+    ).current;
 
     function openCreateModal() {
         setSelectedTask(null);
@@ -100,67 +191,111 @@ export default function Kanban() {
         setModalMode('form');
     }
 
-    function saveTask() {
+    async function saveTask() {
         if (!taskTitle.trim()) {
+            Alert.alert('Atenção', 'Informe o título da atividade.');
             return;
         }
 
-        if (selectedTask) {
-            setTasks((previous) =>
-                previous.map((task) =>
-                    task.id === selectedTask.id
-                        ? {
-                            ...task,
-                            title: taskTitle.trim(),
-                            description: taskDescription.trim(),
-                        }
-                        : task
-                )
-            );
-        } else {
-            const newTask = {
-                id: Date.now().toString(),
-                title: taskTitle.trim(),
-                description: taskDescription.trim(),
-                status: activeColumn,
-                color: POST_IT_COLORS[
-                    Math.floor(Math.random() * POST_IT_COLORS.length)
-                ],
-            };
-
-            setTasks((previous) => [...previous, newTask]);
+        if (!usuario?.uid) {
+            Alert.alert('Atenção', 'Faça login novamente para salvar suas atividades.');
+            return;
         }
 
-        setModalVisible(false);
+        try {
+            if (selectedTask) {
+                await atualizarTarefa(usuario.uid, selectedTask.id, {
+                    title: taskTitle.trim(),
+                    description: taskDescription.trim(),
+                });
+            } else {
+                const agora = Date.now();
+                await criarTarefa(usuario.uid, {
+                    title: taskTitle.trim(),
+                    description: taskDescription.trim(),
+                    status: activeColumn,
+                    color: POST_IT_COLORS[
+                        Math.floor(Math.random() * POST_IT_COLORS.length)
+                    ],
+                    createdAt: agora,
+                    completedAt: activeColumn === 'done' ? agora : null,
+                    archivedAt: null,
+                });
+            }
+
+            setModalVisible(false);
+        } catch (error) {
+            console.error('[Kanban] Erro ao salvar tarefa:', error);
+            Alert.alert('Erro', 'Não foi possível salvar a atividade. Tente novamente.');
+        }
     }
 
-    function changeStatus(status) {
-        setTasks((previous) =>
-            previous.map((task) =>
-                task.id === selectedTask.id
-                    ? { ...task, status }
-                    : task
-            )
-        );
+    async function changeStatus(status) {
+        if (!selectedTask || !usuario?.uid) return;
 
-        setModalVisible(false);
+        const completedAt = status === 'done' ? Date.now() : null;
+
+        try {
+            await atualizarTarefa(usuario.uid, selectedTask.id, {
+                status,
+                completedAt,
+                archivedAt: null,
+            });
+
+            if (status === 'done') {
+                setModalMode('congratulations');
+                setModalVisible(true);
+            } else {
+                setModalVisible(false);
+            }
+        } catch (error) {
+            console.error('[Kanban] Erro ao mover tarefa:', error);
+            Alert.alert('Erro', 'Não foi possível mover a atividade.');
+        }
+    }
+
+    async function restoreArchivedTask(task) {
+        if (!usuario?.uid) return;
+
+        try {
+            await atualizarTarefa(usuario.uid, task.id, {
+                status: 'done',
+                completedAt: Date.now(),
+                archivedAt: null,
+            });
+            setModalVisible(false);
+        } catch (error) {
+            console.error('[Kanban] Erro ao restaurar tarefa:', error);
+            Alert.alert('Erro', 'Não foi possível restaurar a atividade.');
+        }
+    }
+
+    async function deleteArchivedTask(taskId) {
+        if (!usuario?.uid) return;
+
+        try {
+            await excluirTarefa(usuario.uid, taskId);
+        } catch (error) {
+            console.error('[Kanban] Erro ao excluir tarefa arquivada:', error);
+            Alert.alert('Erro', 'Não foi possível excluir a atividade do histórico.');
+        }
     }
 
     function deleteTask() {
         setModalMode('confirmDelete');
     }
 
-    function confirmDeleteTask() {
-        if (!selectedTask) return;
+    async function confirmDeleteTask() {
+        if (!selectedTask || !usuario?.uid) return;
 
-        setTasks((previous) =>
-            previous.filter(
-                (task) => task.id !== selectedTask.id
-            )
-        );
-
-        setModalVisible(false);
-        setSelectedTask(null);
+        try {
+            await excluirTarefa(usuario.uid, selectedTask.id);
+            setModalVisible(false);
+            setSelectedTask(null);
+        } catch (error) {
+            console.error('[Kanban] Erro ao excluir tarefa:', error);
+            Alert.alert('Erro', 'Não foi possível excluir a atividade.');
+        }
     }
 
     function closeModal() {
@@ -190,48 +325,66 @@ export default function Kanban() {
                             Organize suas atividades
                         </Text>
                     </View>
+
+                    <TouchableOpacity
+                        style={styles.historyButton}
+                        onPress={() => {
+                            setModalMode('history');
+                            setModalVisible(true);
+                        }}
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons name="archive-outline" size={21} color={COLORS.primaryDark} />
+                        <Text style={styles.historyButtonText}>Histórico</Text>
+                    </TouchableOpacity>
                 </View>
 
-                {/* ABAS */}
-                <View style={styles.tabsContainer}>
-                    {COLUMNS.map((column) => {
-                        const selected = activeColumn === column.id;
+                {/* ABAS COM INDICADOR ANIMADO */}
+                <View
+                    style={styles.tabsContainer}
+                    onLayout={(event) => setTabsWidth(event.nativeEvent.layout.width)}
+                >
+                    <Animated.View
+                        pointerEvents="none"
+                        style={[
+                            styles.animatedTabIndicator,
+                            {
+                                width: tabWidth,
+                                transform: [{ translateX: indicatorTranslateX }],
+                            },
+                        ]}
+                    />
 
+                    {COLUMNS.map((column, index) => {
                         const count = tasks.filter(
                             (task) => task.status === column.id
                         ).length;
 
+                        const color = scrollX.interpolate({
+                            inputRange: [0, boardWidth || 1, (boardWidth || 1) * 2],
+                            outputRange: index === 0
+                                ? ['#FFFFFF', '#237438', '#237438']
+                                : index === 1
+                                    ? ['#237438', '#FFFFFF', '#237438']
+                                    : ['#237438', '#237438', '#FFFFFF'],
+                            extrapolate: 'clamp',
+                        });
+
                         return (
                             <TouchableOpacity
                                 key={column.id}
-                                style={[
-                                    styles.tab,
-                                    selected && styles.activeTab,
-                                ]}
-                                onPress={() => setActiveColumn(column.id)}
-                                activeOpacity={0.8}
+                                style={styles.tab}
+                                onPress={() => goToColumn(index)}
+                                activeOpacity={0.85}
                             >
-                                <Text
-                                    style={[
-                                        styles.tabText,
-                                        selected && styles.activeTabText,
-                                    ]}
+                                <Animated.Text
+                                    style={[styles.tabText, { color }]}
                                 >
                                     {column.title}
-                                </Text>
+                                </Animated.Text>
 
-                                <View
-                                    style={[
-                                        styles.countBadge,
-                                        selected && styles.activeCountBadge,
-                                    ]}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.countText,
-                                            selected && styles.activeCountText,
-                                        ]}
-                                    >
+                                <View style={styles.countBadge}>
+                                    <Text style={styles.countText}>
                                         {count}
                                     </Text>
                                 </View>
@@ -240,96 +393,124 @@ export default function Kanban() {
                     })}
                 </View>
 
-                {/* CONTEÚDO */}
-                <ScrollView
-                    style={styles.scroll}
-                    contentContainerStyle={styles.scrollContent}
-                    showsVerticalScrollIndicator={false}
+                {/* QUADRO COM TRANSIÇÃO HORIZONTAL ANIMADA */}
+                <View
+                    style={styles.pagesViewport}
+                    onLayout={(event) => {
+                        const width = event.nativeEvent.layout.width;
+                        boardWidthRef.current = width;
+                        setBoardWidth(width);
+                    }}
+                    {...pagerResponder.panHandlers}
                 >
-                    <View style={styles.sectionHeader}>
-                        <View>
-                            <Text style={styles.sectionTitle}>
-                                {currentColumn.title}
-                            </Text>
-
-                            <Text style={styles.sectionSubtitle}>
-                                {filteredTasks.length === 0
-                                    ? 'Nenhuma atividade por aqui'
-                                    : `${filteredTasks.length} atividade(s)`}
-                            </Text>
-                        </View>
-
-                        <Ionicons
-                            name="ellipsis-horizontal-circle-outline"
-                            size={25}
-                            color={COLORS.textSecondary}
-                        />
-                    </View>
-
-                    {/* POST-ITS */}
-                    {filteredTasks.length > 0 ? (
-                        <View style={styles.tasksContainer}>
-                            {filteredTasks.map((task) => (
-                                <TouchableOpacity
-                                    key={task.id}
-                                    style={[
-                                        styles.postIt,
-                                        { backgroundColor: task.color },
-                                    ]}
-                                    onPress={() => openTask(task)}
-                                    activeOpacity={0.85}
-                                >
-                                    <View style={styles.postItHeader}>
-                                        <View style={styles.postItIcon}>
-                                            <Ionicons
-                                                name="document-text-outline"
-                                                size={18}
-                                                color={COLORS.primaryDark}
-                                            />
-                                        </View>
-
-                                        <Ionicons
-                                            name="ellipsis-horizontal"
-                                            size={21}
-                                            color={COLORS.text}
-                                        />
-                                    </View>
-
-                                    <Text style={styles.postItTitle}>
-                                        {task.title}
-                                    </Text>
-
-                                    {!!task.description && (
-                                        <Text style={styles.postItDescription}>
-                                            {task.description}
-                                        </Text>
-                                    )}
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    ) : (
+                    {carregandoAuth || carregandoTarefas ? (
                         <View style={styles.emptyContainer}>
-                            <View style={styles.emptyIcon}>
-                                <Ionicons
-                                    name="document-text-outline"
-                                    size={34}
-                                    color={COLORS.primary}
-                                />
-                            </View>
-
-                            <Text style={styles.emptyTitle}>
-                                Seu quadro está vazio!
-                            </Text>
-
-                            <Text style={styles.emptyText}>
-                                Crie uma atividade para começar a organizar
-                                suas tarefas.
-                            </Text>
+                            <Text style={styles.emptyText}>Carregando suas atividades...</Text>
                         </View>
-                    )}
+                    ) : boardWidth > 0 && (
+                        <Animated.View
+                            style={[
+                                styles.pagesTrack,
+                                {
+                                    width: boardWidth * COLUMNS.length,
+                                    transform: [{ translateX: pageTranslateX }],
+                                },
+                            ]}
+                        >
+                            {COLUMNS.map((column) => {
+                                const columnTasks = tasks.filter(
+                                    (task) => task.status === column.id
+                                );
 
-                    <View style={{ height: 100 }} />
-                </ScrollView>
+                                return (
+                                    <View
+                                        key={column.id}
+                                        style={[styles.page, { width: boardWidth }]}
+                                    >
+                                        <ScrollView
+                                            style={styles.scroll}
+                                            contentContainerStyle={styles.scrollContent}
+                                            showsVerticalScrollIndicator={false}
+                                            nestedScrollEnabled
+                                        >
+                                            <View style={styles.sectionHeader}>
+                                                <View>
+                                                    <Text style={styles.sectionTitle}>
+                                                        {column.title}
+                                                    </Text>
+                                                    <Text style={styles.sectionSubtitle}>
+                                                        {columnTasks.length === 0
+                                                            ? 'Nenhuma atividade por aqui'
+                                                            : `${columnTasks.length} atividade(s)`}
+                                                    </Text>
+                                                </View>
+                                            </View>
+
+                                            {columnTasks.length > 0 ? (
+                                                <View style={styles.tasksContainer}>
+                                                    {columnTasks.map((task) => (
+                                                        <TouchableOpacity
+                                                            key={task.id}
+                                                            style={[
+                                                                styles.postIt,
+                                                                { backgroundColor: task.color },
+                                                            ]}
+                                                            onPress={() => openTask(task)}
+                                                            activeOpacity={0.85}
+                                                        >
+                                                            <View style={styles.postItHeader}>
+                                                                <View style={styles.postItIcon}>
+                                                                    <Ionicons
+                                                                        name="document-text-outline"
+                                                                        size={18}
+                                                                        color={COLORS.primaryDark}
+                                                                    />
+                                                                </View>
+                                                                <Ionicons
+                                                                    name="ellipsis-horizontal"
+                                                                    size={21}
+                                                                    color={COLORS.text}
+                                                                />
+                                                            </View>
+
+                                                            <Text style={styles.postItTitle}>
+                                                                {task.title}
+                                                            </Text>
+
+                                                            {!!task.description && (
+                                                                <Text style={styles.postItDescription}>
+                                                                    {task.description}
+                                                                </Text>
+                                                            )}
+                                                        </TouchableOpacity>
+                                                    ))}
+                                                </View>
+                                            ) : (
+                                                <View style={styles.emptyContainer}>
+                                                    <View style={styles.emptyIcon}>
+                                                        <Ionicons
+                                                            name="document-text-outline"
+                                                            size={34}
+                                                            color={COLORS.primary}
+                                                        />
+                                                    </View>
+                                                    <Text style={styles.emptyTitle}>
+                                                        Seu quadro está vazio!
+                                                    </Text>
+                                                    <Text style={styles.emptyText}>
+                                                        Crie uma atividade para começar a organizar suas tarefas.
+                                                    </Text>
+                                                </View>
+                                            )}
+
+                                            <View style={{ height: 100 }} />
+                                        </ScrollView>
+                                    </View>
+                                );
+                            })}
+                        </Animated.View>
+                    )}
+                </View>
 
                 {/* BOTÃO + FIXO NO CANTO INFERIOR DIREITO */}
                 <TouchableOpacity
@@ -377,8 +558,62 @@ export default function Kanban() {
                                 </TouchableOpacity>
                             </View>
 
-                            {/* CONFIRMAÇÃO DE EXCLUSÃO */}
-                            {modalMode === 'confirmDelete' ? (
+                            {/* HISTÓRICO DE ATIVIDADES */}
+                            {modalMode === 'history' ? (
+                                <View>
+                                    <Text style={styles.historyIntro}>
+                                        Aqui ficam suas atividades concluídas e arquivadas.
+                                    </Text>
+
+                                    <ScrollView style={styles.historyList} showsVerticalScrollIndicator={false}>
+                                        {archivedTasks.length === 0 ? (
+                                            <View style={styles.historyEmpty}>
+                                                <Ionicons name="archive-outline" size={36} color={COLORS.primary} />
+                                                <Text style={styles.emptyTitle}>Seu histórico está vazio</Text>
+                                                <Text style={styles.emptyText}>
+                                                    As atividades concluídas ficarão disponíveis aqui depois de 7 dias.
+                                                </Text>
+                                            </View>
+                                        ) : (
+                                            archivedTasks.slice().sort((a, b) => (b.archivedAt || 0) - (a.archivedAt || 0)).map((task) => (
+                                                <View key={task.id} style={styles.historyItem}>
+                                                    <View style={[styles.historyTaskIcon, { backgroundColor: task.color || '#E3F0DD' }]}>
+                                                        <Ionicons name="checkmark" size={20} color={COLORS.primaryDark} />
+                                                    </View>
+                                                    <View style={styles.historyTaskInfo}>
+                                                        <Text style={styles.historyTaskTitle}>{task.title}</Text>
+                                                        <Text style={styles.historyTaskDate}>
+                                                            Concluída em {task.completedAt ? new Date(task.completedAt).toLocaleDateString('pt-BR') : 'data não informada'}
+                                                        </Text>
+                                                    </View>
+                                                    <TouchableOpacity onPress={() => restoreArchivedTask(task)} style={styles.historyAction}>
+                                                        <Ionicons name="refresh-outline" size={20} color={COLORS.primaryDark} />
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity onPress={() => deleteArchivedTask(task.id)} style={styles.historyAction}>
+                                                        <Ionicons name="trash-outline" size={19} color="#D65C65" />
+                                                    </TouchableOpacity>
+                                                </View>
+                                            ))
+                                        )}
+                                    </ScrollView>
+                                </View>
+                            ) : modalMode === 'congratulations' ? (
+                                <View style={styles.congratulationsContainer}>
+                                    <View style={styles.congratulationsIcon}>
+                                        <Ionicons name="trophy" size={38} color="#237438" />
+                                    </View>
+                                    <Text style={styles.congratulationsTitle}>Atividade concluída!</Text>
+                                    <Text style={styles.congratulationsText}>
+                                        Parabéns por mais uma conquista! Sua atividade ficará disponível na coluna Feito por 7 dias e depois será arquivada automaticamente.
+                                    </Text>
+                                    <TouchableOpacity
+                                        style={styles.congratulationsButton}
+                                        onPress={closeModal}
+                                    >
+                                        <Text style={styles.congratulationsButtonText}>Continuar</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ) : modalMode === 'confirmDelete' ? (
                                 <View>
                                     <Text style={styles.confirmTitle}>
                                         Tem certeza?
@@ -575,6 +810,94 @@ const styles = StyleSheet.create({
         flex: 1,
     },
 
+    historyButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingVertical: 9,
+        paddingHorizontal: 11,
+        borderRadius: 13,
+        backgroundColor: '#E5F3E8',
+    },
+    historyButtonText: {
+        color: COLORS.primaryDark,
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    historyIntro: {
+        color: COLORS.textSecondary,
+        fontSize: 13,
+        lineHeight: 20,
+        marginBottom: 14,
+    },
+    historyList: {
+        maxHeight: 420,
+    },
+    historyEmpty: {
+        alignItems: 'center',
+        paddingVertical: 35,
+        paddingHorizontal: 15,
+        gap: 10,
+    },
+    historyItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#EDF3F8',
+        gap: 9,
+    },
+    historyTaskIcon: {
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    historyTaskInfo: {
+        flex: 1,
+    },
+    historyTaskTitle: {
+        color: COLORS.text,
+        fontSize: 13,
+        fontWeight: '700',
+    },
+    historyTaskDate: {
+        color: COLORS.textSecondary,
+        fontSize: 11,
+        marginTop: 4,
+    },
+    historyAction: {
+        padding: 7,
+    },
+    congratulationsContainer: {
+        alignItems: 'center',
+        paddingVertical: 12,
+    },
+    congratulationsIcon: {
+        width: 76,
+        height: 76,
+        borderRadius: 25,
+        backgroundColor: '#E3F0DD',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+    },
+    congratulationsTitle: {
+        color: COLORS.primaryDark,
+        fontSize: 20,
+        fontWeight: '800',
+        marginBottom: 10,
+        textAlign: 'center',
+    },
+    congratulationsText: {
+        color: COLORS.textSecondary,
+        fontSize: 14,
+        lineHeight: 22,
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+
     headerTitle: {
         fontSize: 23,
         fontWeight: '800',
@@ -595,6 +918,17 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#DCEADF',
         marginBottom: 25,
+        position: 'relative',
+        overflow: 'hidden',
+    },
+
+    animatedTabIndicator: {
+        position: 'absolute',
+        left: 4,
+        top: 4,
+        bottom: 4,
+        borderRadius: 14,
+        backgroundColor: '#237438',
     },
 
     tab: {
@@ -605,20 +939,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         flexDirection: 'row',
         gap: 5,
-    },
-
-    activeTab: {
-        backgroundColor: COLORS.primary,
+        zIndex: 1,
     },
 
     tabText: {
         fontSize: 12,
-        fontWeight: '600',
-        color: COLORS.primaryDark,
-    },
-
-    activeTabText: {
-        color: COLORS.white,
+        fontWeight: '700',
     },
 
     countBadge: {
@@ -631,18 +957,24 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
 
-    activeCountBadge: {
-        backgroundColor: '#FFFFFF',
-    },
-
     countText: {
         fontSize: 10,
         fontWeight: '700',
         color: COLORS.primaryDark,
     },
 
-    activeCountText: {
-        color: COLORS.primaryDark,
+    pagesViewport: {
+        flex: 1,
+        overflow: 'hidden',
+    },
+
+    pagesTrack: {
+        flex: 1,
+        flexDirection: 'row',
+    },
+
+    page: {
+        flex: 1,
     },
 
     scroll: {
@@ -937,4 +1269,22 @@ const styles = StyleSheet.create({
         color: COLORS.primaryDark,
         fontWeight: '700',
     },
+    congratulationsButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 14,
+    width: '100%',
+    maxWidth: 220,
+    minHeight: 46,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 18,
+},
+
+congratulationsButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.white,
+},
+    
 });
