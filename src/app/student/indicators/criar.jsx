@@ -206,11 +206,14 @@ export default function CriarIndicador() {
     return (
         <KeyboardAvoidingView
             style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            // Reduz a área útil quando o teclado aparece, inclusive no Android.
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={0}
         >
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
+                keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
                 contentContainerStyle={styles.content}
             >
                 {/* Cabeçalho */}
@@ -705,7 +708,9 @@ const styles = StyleSheet.create({
     content: {
         paddingHorizontal: 20,
         paddingTop: Platform.OS === 'android' ? 42 : 24,
-        paddingBottom: 35,
+        // Espaço extra para conseguir rolar os campos e os botões finais
+        // para cima do teclado quando ele estiver aberto.
+        paddingBottom: 180,
     },
 
     header: {

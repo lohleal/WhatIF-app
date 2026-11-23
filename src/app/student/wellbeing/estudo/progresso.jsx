@@ -96,7 +96,7 @@ export default function ProgressoEstudos() {
             }
             .chart {
               width: 100%;
-              height: 260px;
+              height: 280px;
               margin-bottom: 18px;
             }
             .chart-title {
@@ -143,11 +143,11 @@ export default function ProgressoEstudos() {
               );
 
               graficoMaterias.draw(tabelaMaterias, {
-                height: 260,
+                height: 280,
                 backgroundColor: 'transparent',
                 pieHole: 0.55,
                 colors: ['#378568', '#75B99A', '#B5DEC9', '#D9EFE3', '#A2A8B5'],
-                chartArea: { width: '95%', height: '85%' },
+                chartArea: { width: '88%', height: '72%', left: 8, top: 8 },
                 legend: {
                   position: 'bottom',
                   textStyle: { color: '#777D90', fontSize: 11 }
@@ -315,7 +315,7 @@ export default function ProgressoEstudos() {
                 srcDoc: htmlGraficos,
                 style: {
                   width: '100%',
-                  height: '550px',
+                  height: '660px',
                   border: 'none',
                   backgroundColor: '#FFFFFF',
                 },
@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
     minHeight: 220,
   },
   webview: {
-    height: 550,
+    height: 660,
     backgroundColor: '#FFFFFF',
   },
   graficoVazio: {

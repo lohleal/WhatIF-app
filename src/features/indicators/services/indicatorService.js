@@ -9,6 +9,11 @@ import {
     updateDoc,
 } from 'firebase/firestore';
 
+import {
+    agendarLembretesIndicador,
+    cancelarLembretesIndicador,
+} from './indicatorNotificationService';
+
 import { auth, db } from '../../../services/firebase/firebaseConfig';
 
 // Verificar se o estudante está logado e se o indicador pertence a ele
@@ -85,12 +90,10 @@ export async function criarIndicador(dados) {
                 ? dados.reminderTime
                 : null,
 
-            // Personalização escolhida pelo estudante
             iconName: dados.iconName || 'water-outline',
             iconColor: dados.iconColor || '#5A8EAD',
             backgroundColor: dados.backgroundColor || '#DCEFF5',
 
-            // Indicador ativo e sem progresso inicial
             active: true,
 
             createdAt: serverTimestamp(),
@@ -105,12 +108,26 @@ export async function criarIndicador(dados) {
             throw new Error('A meta do indicador precisa ser maior que zero.');
         }
 
+        // Salvar indicador no Firestore
         const referencia = await addDoc(
             collection(db, 'indicators'),
             novoIndicador
         );
 
         console.log('[Indicador] Salvo com ID:', referencia.id);
+
+        // Agendar lembrete no dispositivo
+        try {
+            await agendarLembretesIndicador(referencia.id, {
+                ...novoIndicador,
+                active: true,
+            });
+        } catch (erroNotificacao) {
+            console.error(
+                '[Indicador] Não foi possível agendar o lembrete:',
+                erroNotificacao
+            );
+        }
 
         return referencia.id;
 
@@ -149,6 +166,19 @@ export async function atualizarIndicador(id, dados) {
     }
 
     await updateDoc(referencia, atualizacao);
+
+    // Atualizar o lembrete com os dados atuais do indicador
+    try {
+        await agendarLembretesIndicador(id, {
+            ...indicador,
+            ...atualizacao,
+        });
+    } catch (erroNotificacao) {
+        console.error(
+            '[Indicador] Erro ao atualizar lembrete:',
+            erroNotificacao
+        );
+    }
 }
 
 // Consultar histórico de progresso
@@ -267,4 +297,14 @@ export async function excluirIndicador(id) {
         archivedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
     });
+
+    // Cancelar os lembretes do indicador arquivado
+    try {
+        await cancelarLembretesIndicador(id);
+    } catch (erroNotificacao) {
+        console.error(
+            '[Indicador] Erro ao cancelar lembrete:',
+            erroNotificacao
+        );
+    }
 }

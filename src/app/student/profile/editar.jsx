@@ -1,6 +1,4 @@
-
 import { useEffect, useState } from 'react';
-
 import {
     Alert,
     ImageBackground,
@@ -13,19 +11,54 @@ import {
     TextInput,
     View,
 } from 'react-native';
-
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 import useProfileViewModel from '../../../features/profile/viewmodels/useProfileViewModel';
-
 const VERDE = '#43503E';
 const VERDE_CLARO = '#7BA05F';
+function Campo({
+        label,
+        icon,
+        value,
+        onChangeText,
+        placeholder,
+        keyboardType = 'default',
+        editable = true,
+        maxLength,
+    }) {
+        return (
+            <View style={styles.fieldContainer}>
+                <Text style={styles.label}>{label}</Text>
+                <View
+                    style={[
+                        styles.inputContainer,
+                        !editable && styles.inputDisabled,
+                    ]}
+                >
+                    <MaterialCommunityIcons
+                        name={icon}
+                        size={21}
+                        color={VERDE_CLARO}
+                    />
+                    <TextInput
+                        style={styles.input}
+                        value={value}
+                        onChangeText={onChangeText}
+                        placeholder={placeholder}
+                        placeholderTextColor="#999999"
+                        keyboardType={keyboardType}
+                        editable={editable}
+                        maxLength={maxLength}
+                        autoCapitalize="words"
+                    />
+                </View>
+            </View>
+        );
+}
 
 export default function EditarPerfil() {
     const router = useRouter();
-
     const {
         perfil,
         loading,
@@ -33,12 +66,10 @@ export default function EditarPerfil() {
         erro,
         salvarPerfil,
     } = useProfileViewModel();
-
     const [nome, setNome] = useState('');
     const [sobrenome, setSobrenome] = useState('');
     const [telefone, setTelefone] = useState('');
     const [dataNascimento, setDataNascimento] = useState('');
-
     useEffect(() => {
         if (perfil) {
             setNome(perfil.nome || '');
@@ -47,29 +78,28 @@ export default function EditarPerfil() {
             setDataNascimento(perfil.dataNascimento || '');
         }
     }, [perfil]);
-
     function formatarTelefone(valor) {
         const numeros = valor.replace(/\D/g, '').slice(0, 11);
-
         if (numeros.length <= 2) {
             return numeros;
         }
-
         if (numeros.length <= 7) {
             return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`;
         }
-
         return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7)}`;
     }
-
+    function formatarDataNascimento(valor) {
+        const numeros = valor.replace(/\D/g, '').slice(0, 8);
+        if (numeros.length <= 2) return numeros;
+        if (numeros.length <= 4) return `${numeros.slice(0, 2)}/${numeros.slice(2)}`;
+        return `${numeros.slice(0, 2)}/${numeros.slice(2, 4)}/${numeros.slice(4)}`;
+    }
     function validarData(data) {
         if (!/^\d{2}\/\d{2}\/\d{4}$/.test(data)) {
             return false;
         }
-
         const [dia, mes, ano] = data.split('/').map(Number);
         const dataTeste = new Date(ano, mes - 1, dia);
-
         return (
             dataTeste.getFullYear() === ano &&
             dataTeste.getMonth() === mes - 1 &&
@@ -78,7 +108,6 @@ export default function EditarPerfil() {
             dataTeste <= new Date()
         );
     }
-
     async function handleSalvar() {
         if (!nome.trim() || !sobrenome.trim()) {
             Alert.alert(
@@ -87,7 +116,6 @@ export default function EditarPerfil() {
             );
             return;
         }
-
         if (telefone && telefone.replace(/\D/g, '').length < 10) {
             Alert.alert(
                 'Telefone inválido',
@@ -95,7 +123,6 @@ export default function EditarPerfil() {
             );
             return;
         }
-
         if (dataNascimento && !validarData(dataNascimento)) {
             Alert.alert(
                 'Data inválida',
@@ -103,14 +130,12 @@ export default function EditarPerfil() {
             );
             return;
         }
-
         const sucesso = await salvarPerfil({
             nome,
             sobrenome,
             telefone,
             dataNascimento,
         });
-
         if (sucesso) {
             Alert.alert(
                 'Perfil atualizado!',
@@ -129,49 +154,6 @@ export default function EditarPerfil() {
             );
         }
     }
-
-    function Campo({
-        label,
-        icon,
-        value,
-        onChangeText,
-        placeholder,
-        keyboardType = 'default',
-        editable = true,
-        maxLength,
-    }) {
-        return (
-            <View style={styles.fieldContainer}>
-                <Text style={styles.label}>{label}</Text>
-
-                <View
-                    style={[
-                        styles.inputContainer,
-                        !editable && styles.inputDisabled,
-                    ]}
-                >
-                    <MaterialCommunityIcons
-                        name={icon}
-                        size={21}
-                        color={VERDE_CLARO}
-                    />
-
-                    <TextInput
-                        style={styles.input}
-                        value={value}
-                        onChangeText={onChangeText}
-                        placeholder={placeholder}
-                        placeholderTextColor="#999999"
-                        keyboardType={keyboardType}
-                        editable={editable}
-                        maxLength={maxLength}
-                        autoCapitalize="words"
-                    />
-                </View>
-            </View>
-        );
-    }
-
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -181,14 +163,12 @@ export default function EditarPerfil() {
             </View>
         );
     }
-
     if (!perfil) {
         return (
             <View style={styles.loadingContainer}>
                 <Text style={styles.errorText}>
                     {erro || 'Não foi possível carregar seu perfil.'}
                 </Text>
-
                 <Pressable
                     style={styles.cancelButton}
                     onPress={() => router.back()}
@@ -198,7 +178,6 @@ export default function EditarPerfil() {
             </View>
         );
     }
-
     return (
         <ImageBackground
             source={require('../../../../assets/images/indicators-background.png')}
@@ -208,12 +187,14 @@ export default function EditarPerfil() {
             <SafeAreaView style={styles.safeArea}>
                 <KeyboardAvoidingView
                     style={styles.flex}
-                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    keyboardVerticalOffset={0}
                 >
                     <ScrollView
                         contentContainerStyle={styles.content}
                         showsVerticalScrollIndicator={false}
                         keyboardShouldPersistTaps="handled"
+                        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
                     >
                         <View style={styles.header}>
                             <Pressable
@@ -226,18 +207,15 @@ export default function EditarPerfil() {
                                     color={VERDE}
                                 />
                             </Pressable>
-
                             <View style={styles.headerTextContainer}>
                                 <Text style={styles.title}>
                                     Editar <Text style={styles.highlight}>perfil</Text>
                                 </Text>
-
                                 <Text style={styles.subtitle}>
                                     Atualize suas informações pessoais.
                                 </Text>
                             </View>
                         </View>
-
                         <View style={styles.avatarContainer}>
                             <View style={styles.avatar}>
                                 <MaterialCommunityIcons
@@ -246,21 +224,17 @@ export default function EditarPerfil() {
                                     color={VERDE_CLARO}
                                 />
                             </View>
-
                             <Text style={styles.avatarName}>
                                 {nome || 'Seu nome'}
                             </Text>
-
                             <Text style={styles.avatarSubtitle}>
                                 Informações da sua conta
                             </Text>
                         </View>
-
                         <View style={styles.formCard}>
                             <Text style={styles.sectionTitle}>
                                 Dados pessoais
                             </Text>
-
                             <Campo
                                 label="Nome"
                                 icon="account-outline"
@@ -268,7 +242,6 @@ export default function EditarPerfil() {
                                 onChangeText={setNome}
                                 placeholder="Digite seu nome"
                             />
-
                             <Campo
                                 label="Sobrenome"
                                 icon="account-outline"
@@ -276,7 +249,6 @@ export default function EditarPerfil() {
                                 onChangeText={setSobrenome}
                                 placeholder="Digite seu sobrenome"
                             />
-
                             <Campo
                                 label="Telefone"
                                 icon="phone-outline"
@@ -288,42 +260,37 @@ export default function EditarPerfil() {
                                 keyboardType="phone-pad"
                                 maxLength={15}
                             />
-
                             <Campo
                                 label="Data de nascimento"
                                 icon="calendar-outline"
                                 value={dataNascimento}
-                                onChangeText={setDataNascimento}
+                                onChangeText={(valor) =>
+                                    setDataNascimento(formatarDataNascimento(valor))
+                                }
                                 placeholder="DD/MM/AAAA"
                                 keyboardType="numeric"
                                 maxLength={10}
                             />
-
                             <View style={styles.divider} />
-
                             <Text style={styles.sectionTitle}>
                                 Dados da conta
                             </Text>
-
                             <Campo
                                 label="E-mail"
                                 icon="email-outline"
                                 value={perfil.email || ''}
                                 editable={false}
                             />
-
                             <Campo
                                 label="Grupo participante"
                                 icon="account-group-outline"
                                 value={perfil.grupoId || 'Sem grupo vinculado'}
                                 editable={false}
                             />
-
                             <Text style={styles.helperText}>
                                 O e-mail e o grupo não podem ser alterados nesta tela.
                             </Text>
                         </View>
-
                         <Pressable
                             style={({ pressed }) => [
                                 styles.saveButton,
@@ -344,14 +311,12 @@ export default function EditarPerfil() {
                                         size={22}
                                         color="#FFFFFF"
                                     />
-
                                     <Text style={styles.saveButtonText}>
                                         Salvar alterações
                                     </Text>
                                 </>
                             )}
                         </Pressable>
-
                         <Pressable
                             style={styles.cancelButton}
                             onPress={() => router.back()}
@@ -367,32 +332,27 @@ export default function EditarPerfil() {
         </ImageBackground>
     );
 }
-
 const styles = StyleSheet.create({
     flex: {
         flex: 1,
     },
-
     background: {
         flex: 1,
     },
-
     safeArea: {
         flex: 1,
     },
-
     content: {
         paddingHorizontal: 22,
         paddingTop: 18,
-        paddingBottom: 35,
+        // Espaço extra para rolar os campos e os botões acima do teclado.
+        paddingBottom: 180,
     },
-
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 25,
     },
-
     backButton: {
         width: 44,
         height: 44,
@@ -402,32 +362,26 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginRight: 12,
     },
-
     headerTextContainer: {
         flex: 1,
     },
-
     title: {
         fontSize: 27,
         fontWeight: '800',
         color: VERDE,
     },
-
     highlight: {
         color: VERDE_CLARO,
     },
-
     subtitle: {
         fontSize: 13,
         color: '#6F756B',
         marginTop: 4,
     },
-
     avatarContainer: {
         alignItems: 'center',
         marginBottom: 25,
     },
-
     avatar: {
         width: 105,
         height: 105,
@@ -438,20 +392,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-
     avatarName: {
         fontSize: 20,
         fontWeight: '700',
         color: VERDE,
         marginTop: 12,
     },
-
     avatarSubtitle: {
         fontSize: 13,
         color: '#777777',
         marginTop: 4,
     },
-
     formCard: {
         backgroundColor: '#FFFFFF',
         borderRadius: 22,
@@ -465,25 +416,21 @@ const styles = StyleSheet.create({
             height: 3,
         },
     },
-
     sectionTitle: {
         fontSize: 17,
         fontWeight: '800',
         color: VERDE,
         marginBottom: 18,
     },
-
     fieldContainer: {
         marginBottom: 17,
     },
-
     label: {
         fontSize: 13,
         fontWeight: '700',
         color: '#50564C',
         marginBottom: 8,
     },
-
     inputContainer: {
         minHeight: 54,
         flexDirection: 'row',
@@ -494,12 +441,10 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         paddingHorizontal: 15,
     },
-
     inputDisabled: {
         backgroundColor: '#EEEEEE',
         borderColor: '#E5E5E5',
     },
-
     input: {
         flex: 1,
         height: 52,
@@ -507,21 +452,18 @@ const styles = StyleSheet.create({
         color: '#333333',
         marginLeft: 11,
     },
-
     divider: {
         height: 1,
         backgroundColor: '#E8EDE5',
         marginVertical: 12,
         marginBottom: 22,
     },
-
     helperText: {
         color: '#858585',
         fontSize: 12,
         marginTop: -5,
         marginBottom: 5,
     },
-
     saveButton: {
         minHeight: 56,
         borderRadius: 16,
@@ -532,34 +474,28 @@ const styles = StyleSheet.create({
         gap: 10,
         marginTop: 24,
     },
-
     saveButtonText: {
         color: '#FFFFFF',
         fontSize: 16,
         fontWeight: '700',
     },
-
     buttonPressed: {
         opacity: 0.8,
     },
-
     buttonDisabled: {
         opacity: 0.6,
     },
-
     cancelButton: {
         minHeight: 48,
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 8,
     },
-
     cancelButtonText: {
         color: VERDE,
         fontSize: 15,
         fontWeight: '700',
     },
-
     loadingContainer: {
         flex: 1,
         backgroundColor: '#FFFFFF',
@@ -567,13 +503,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 25,
     },
-
     loadingText: {
         color: VERDE,
         fontSize: 16,
         fontWeight: '600',
     },
-
     errorText: {
         color: '#B3261E',
         fontSize: 15,

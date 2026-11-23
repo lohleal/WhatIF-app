@@ -309,16 +309,13 @@ export default function Indicadores() {
                         </View>
 
                         <Pressable
-                            style={
-                                styles.iconButton
-                            }
+                            style={styles.iconButton}
+                            onPress={() => router.push('/student/notifications')}
                         >
                             <MaterialCommunityIcons
                                 name="bell-outline"
                                 size={24}
-                                color={
-                                    COLORS.primary
-                                }
+                                color={COLORS.primary}
                             />
                         </Pressable>
                     </View>

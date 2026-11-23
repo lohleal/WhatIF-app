@@ -534,7 +534,7 @@ export default function Kanban() {
                 >
                     <KeyboardAvoidingView
                         style={styles.modalOverlay}
-                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     >
                         <View style={styles.modalContent}>
 
@@ -645,7 +645,13 @@ export default function Kanban() {
                                 </View>
 
                             ) : modalMode === 'form' ? (
-                                <>
+                                <ScrollView
+                                    style={styles.modalFormScroll}
+                                    contentContainerStyle={styles.modalFormContent}
+                                    keyboardShouldPersistTaps="handled"
+                                    showsVerticalScrollIndicator={false}
+                                    nestedScrollEnabled
+                                >
                                     <Text style={styles.inputLabel}>
                                         Título
                                     </Text>
@@ -656,6 +662,7 @@ export default function Kanban() {
                                         placeholderTextColor="#9BAFC1"
                                         value={taskTitle}
                                         onChangeText={setTaskTitle}
+                                        returnKeyType="next"
                                     />
 
                                     <Text style={styles.inputLabel}>
@@ -675,12 +682,13 @@ export default function Kanban() {
                                     <TouchableOpacity
                                         style={styles.saveButton}
                                         onPress={saveTask}
+                                        activeOpacity={0.85}
                                     >
                                         <Text style={styles.saveButtonText}>
                                             Salvar atividade
                                         </Text>
                                     </TouchableOpacity>
-                                </>
+                                </ScrollView>
 
                             ) : (
                                 <>
@@ -1114,6 +1122,14 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         borderRadius: 24,
         padding: 22,
+    },
+
+    modalFormScroll: {
+        flexShrink: 1,
+    },
+
+    modalFormContent: {
+        paddingBottom: 4,
     },
 
     modalHeader: {
