@@ -10,6 +10,7 @@ import WorkshopsScreen from './features/workshops/views/WorkshopsScreen';
 import AdminLayout from './shared/components/Layout/AdminLayout';
 import GroupDetailsScreen from './features/groups/views/GroupDetailsScreen';
 import ReportsScreen from './features/reports/views/ReportsScreen';
+import StudentsScreen from './features/studants/views/StudentsScreen';
 
 import ProtectedRoute from './features/auth/components/ProtectedRoute';
 import { AuthProvider } from './features/auth/contexts/AuthContext';
@@ -37,7 +38,7 @@ function App() {
             <Route path="/" element={<AdminLayout />}>
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<DashboardScreen />} />
-              <Route path="students" element={<ComingSoon title="Estudantes" />} />
+              <Route path="students" element={<StudentsScreen />} />
               <Route path="groups" element={<GroupsScreen />} />
               <Route path="groups/create" element={<CreateGroupScreen />} />
               <Route path="groups/:groupId" element={<GroupDetailsScreen />} />
